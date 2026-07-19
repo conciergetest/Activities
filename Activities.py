@@ -94,62 +94,84 @@ def ss_init():
 # ─── SPLASH SCREEN ────────────────────────────────────────────────────────────
 def render_splash():
     """
-    Muestra la imagen LOGO.png a pantalla completa.
-    Se cierra automáticamente en 3.5 segundos o al hacer click.
-    No usa time.sleep() — el resto de la app renderiza normalmente detrás.
+    Splash a pantalla completa con barra de progreso dorada.
+    Usa time.sleep() + st.rerun() — funciona 100% en Streamlit Cloud.
+    Sin JavaScript: la barra de progreso es CSS puro.
+    Duración: ~4 segundos.
     """
-    splash_path = os.path.join(os.path.dirname(__file__), "LOGO.png")
-    if not os.path.exists(splash_path):
-        splash_path = os.path.join(os.path.dirname(__file__), "splash.png")
-    if not os.path.exists(splash_path):
+    import time
+
+    # Buscar la imagen
+    for candidate in ["LOGO.png", "splash.png"]:
+        p = os.path.join(os.path.dirname(os.path.abspath(__file__)), candidate)
+        if os.path.exists(p):
+            splash_path = p
+            break
+    else:
+        # No hay imagen; saltamos el splash
         return
 
     with open(splash_path, "rb") as f:
         img_b64 = base64.b64encode(f.read()).decode()
 
+    # Ocultar chrome de Streamlit durante el splash
+    st.markdown("""
+    <style>
+    #MainMenu, header, footer { visibility: hidden !important; }
+    section[data-testid="stSidebar"] { display: none !important; }
+    div[data-testid="stToolbar"] { display: none !important; }
+    .block-container { padding-top: 0 !important; padding-bottom: 0 !important; }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # Splash a pantalla completa — imagen de fondo + barra de progreso CSS
+    DURATION = 4.0   # segundos visibles
     st.markdown(f"""
     <style>
-    #splash-overlay {{
+    .splash-wrap {{
         position: fixed;
         top: 0; left: 0;
         width: 100vw; height: 100vh;
         z-index: 2147483647;
-        background: #000;
+        background: #000 url("data:image/png;base64,{img_b64}") center/contain no-repeat;
         display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
         align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        animation: splashIn 0.6s ease;
+        padding-bottom: 48px;
+        box-sizing: border-box;
+        animation: splashFadeIn 0.8s ease;
     }}
-    @keyframes splashIn  {{ from {{ opacity:0; }} to {{ opacity:1; }} }}
-    @keyframes splashOut {{ from {{ opacity:1; }} to {{ opacity:0; }} }}
-    #splash-overlay.closing {{
-        animation: splashOut 0.7s ease forwards;
-        pointer-events: none;
+    @keyframes splashFadeIn {{ from {{ opacity:0; }} to {{ opacity:1; }} }}
+
+    .splash-bar-track {{
+        width: 220px;
+        height: 4px;
+        background: rgba(255,255,255,0.2);
+        border-radius: 4px;
+        overflow: hidden;
     }}
-    #splash-overlay img {{
-        max-height: 100vh;
-        max-width: 100vw;
-        object-fit: contain;
-        user-select: none;
-        -webkit-user-drag: none;
+    .splash-bar-fill {{
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, #B8860B, #FFD700, #B8860B);
+        border-radius: 4px;
+        animation: barGrow {DURATION:.1f}s ease-in-out forwards;
     }}
+    @keyframes barGrow {{ from {{ width:0%; }} to {{ width:100%; }} }}
     </style>
 
-    <div id="splash-overlay" onclick="closeSplash()">
-        <img src="data:image/png;base64,{img_b64}" draggable="false" />
+    <div class="splash-wrap">
+        <div class="splash-bar-track">
+            <div class="splash-bar-fill"></div>
+        </div>
     </div>
-
-    <script>
-    function closeSplash() {{
-        var el = document.getElementById('splash-overlay');
-        if (!el || el.classList.contains('closing')) return;
-        el.classList.add('closing');
-        setTimeout(function() {{ if (el.parentNode) el.parentNode.removeChild(el); }}, 700);
-    }}
-    setTimeout(closeSplash, 3500);
-    </script>
     """, unsafe_allow_html=True)
+
+    # El CSS ya anima la barra; el sleep garantiza la duración en el servidor
+    time.sleep(DURATION)
+    st.session_state.splash_done = True
+    st.rerun()
 
 # ─── FORM ─────────────────────────────────────────────────────────────────────
 def render_form(week_start, all_bookings):
@@ -302,8 +324,8 @@ def main():
     ss_init()
 
     # Splash solo en la primera carga de cada sesión
+    # render_splash() maneja splash_done internamente y llama st.rerun()
     if not st.session_state.get("splash_done"):
-        st.session_state.splash_done = True
         render_splash()
 
     week_start = week_start_from_offset(st.session_state.week_offset)
