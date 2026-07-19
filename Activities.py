@@ -1,10 +1,9 @@
 import streamlit as st
 from supabase import create_client
 import pandas as pd
-from datetime import date, timedelta
-import time
 import base64
-from pathlib import Path
+import os
+from datetime import date, timedelta
 
 # ─── CONFIG ───────────────────────────────────────────────────────────────────
 ACTIVITY = "Kayak Tour & Snorkeling"
@@ -13,93 +12,53 @@ KAYAK_MAX = 12
 SNORKEL_MAX = 8
 KAYAK_TYPES = ["Type ①", "Type ②"]
 
-# Inicializa Supabase usando los secrets de Streamlit
-supabase = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
-
-# Snorkeling only on specific day+shift combinations
+# weekday(): 0=Mon, 1=Tue, 2=Wed, 3=Thu, 4=Fri, 5=Sat, 6=Sun
 SNORKEL_SCHEDULE = {
-    "9:00 AM":  [1, 3, 5],   # Tue, Thu, Sat
-    "11:00 AM": [],          # No snorkeling
+    "9:00 AM":  [1, 3, 5],    # Tue, Thu, Sat
+    "11:00 AM": [],            # No snorkeling
     "2:00 PM":  [0, 2, 4, 6], # Mon, Wed, Fri, Sun
 }
 
 def snorkel_allowed(day_date: date, shift: str) -> bool:
     return day_date.weekday() in SNORKEL_SCHEDULE.get(shift, [])
 
-# ─── SPLASH SCREEN ────────────────────────────────────────────────────────────
-def get_base64_of_image(image_path):
-    try:
-        with open(image_path, "rb") as img_file:
-            return base64.b64encode(img_file.read()).decode()
-    except FileNotFoundError:
-        return None
+# ─── SUPABASE ─────────────────────────────────────────────────────────────────
+@st.cache_resource
+def get_supabase():
+    return create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
 
-def show_splash_screen():
-    if 'splash_shown' not in st.session_state:
-        st.session_state.splash_shown = False
-    
-    if st.session_state.splash_shown:
-        return
-    
-    image_path = Path("LOGO.png")
-    img_base64 = get_base64_of_image(image_path)
-    img_src = f"data:image/png;base64,{img_base64}" if img_base64 else None
-    
-    splash_html = f"""
-    <style>
-    #splash-overlay {{ position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #001f3f 0%, #003d7a 50%, #0074D9 100%); z-index: 999999; display: flex; flex-direction: column; justify-content: center; align-items: center; animation: fadeOut 1s ease-in-out 14.5s forwards; }}
-    #splash-overlay img {{ max-width: 80%; max-height: 70vh; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); animation: scaleIn 1s ease-out; }}
-    #splash-overlay .splash-text {{ color: white; font-family: 'Georgia', serif; text-align: center; margin-top: 20px; animation: slideUp 1s ease-out 0.5s both; }}
-    #splash-overlay .loading-bar {{ width: 200px; height: 3px; background: rgba(255,255,255,0.2); border-radius: 3px; margin-top: 30px; overflow: hidden; }}
-    #splash-overlay .loading-bar::after {{ content: ''; display: block; width: 0%; height: 100%; background: #D4AF37; animation: loading 14s ease-in-out forwards; }}
-    @keyframes fadeOut {{ to {{ opacity: 0; visibility: hidden; }} }}
-    @keyframes scaleIn {{ from {{ transform: scale(0.8); opacity: 0; }} to {{ transform: scale(1); opacity: 1; }} }}
-    @keyframes slideUp {{ from {{ transform: translateY(30px); opacity: 0; }} to {{ transform: translateY(0); opacity: 1; }} }}
-    @keyframes loading {{ to {{ width: 100%; }} }}
-    </style>
-    <div id="splash-overlay">
-        {f'<img src="{img_src}" alt="Waldorf Astoria Costa Rica">' if img_src else ''}
-        <div class="splash-text">
-            <h1>Waldorf Astoria</h1>
-            <p>Costa Rica</p>
-            <div style="font-size: 0.9rem; margin-top: 15px; opacity: 0.6;">RESERVACIONES KAYAK & SNORKELING</div>
-        </div>
-        <div class="loading-bar"></div>
-    </div>
-    """
-    st.markdown(splash_html, unsafe_allow_html=True)
-    st.session_state.splash_shown = True
-    time.sleep(15)
-
-# ─── DATABASE FUNCTIONS (SUPABASE) ────────────────────────────────────────────
 def load_week(week_start: date):
-    response = supabase.table("bookings").select("*").eq("week_start", str(week_start)).order("day_date,shift,type,id").execute()
-    return response.data
+    sb = get_supabase()
+    res = sb.table("bookings").select("*")\
+        .eq("week_start", str(week_start))\
+        .order("day_date").order("shift").order("type").order("id")\
+        .execute()
+    return res.data or []
 
 def add_booking(week_start, day_date, shift, btype, guest_name, room, pax, kayak_type=None):
-    supabase.table("bookings").insert({
+    get_supabase().table("bookings").insert({
         "week_start": str(week_start),
-        "day_date": str(day_date),
-        "shift": shift,
-        "type": btype,
+        "day_date":   str(day_date),
+        "shift":      shift,
+        "type":       btype,
         "guest_name": guest_name,
-        "room": room,
-        "pax": pax,
-        "kayak_type": kayak_type
+        "room":       room,
+        "pax":        pax,
+        "kayak_type": kayak_type,
     }).execute()
 
 def update_booking(bid, guest_name, room, pax, kayak_type=None):
-    supabase.table("bookings").update({
+    get_supabase().table("bookings").update({
         "guest_name": guest_name,
-        "room": room,
-        "pax": pax,
-        "kayak_type": kayak_type
+        "room":       room,
+        "pax":        pax,
+        "kayak_type": kayak_type,
     }).eq("id", bid).execute()
 
 def delete_booking(bid):
-    supabase.table("bookings").delete().eq("id", bid).execute()
+    get_supabase().table("bookings").delete().eq("id", bid).execute()
 
-# ─── HELPERS & SESSION STATE ──────────────────────────────────────────────────
+# ─── HELPERS ──────────────────────────────────────────────────────────────────
 def week_start_from_offset(offset: int) -> date:
     today = date.today()
     monday = today - timedelta(days=today.weekday())
@@ -111,32 +70,297 @@ def week_days(week_start: date):
 def capacity_bar(used, cap):
     pct = min(used / cap, 1.0)
     color = "#2ecc71" if pct < 0.75 else ("#f39c12" if pct < 1.0 else "#e74c3c")
-    bar = f'<div style="background:#333;border-radius:4px;height:8px;margin:2px 0 4px 0;"><div style="background:{color};width:{pct*100:.0f}%;height:100%;border-radius:4px;"></div></div>'
+    bar = (
+        f'<div style="background:#333;border-radius:4px;height:8px;margin:2px 0 4px 0;">'
+        f'<div style="background:{color};width:{pct*100:.0f}%;height:100%;border-radius:4px;"></div>'
+        f'</div>'
+    )
     icon = "✅" if used < cap else ("⚠️" if used == cap else "🚫")
     return bar, icon
 
+# ─── SESSION STATE ────────────────────────────────────────────────────────────
 def ss_init():
-    defaults = {"week_offset": 0, "form_open": False, "form_mode": None, "form_ctx": {}, "refresh": 0, "splash_shown": False}
+    defaults = {
+        "week_offset": 0,
+        "form_open":   False,
+        "form_mode":   None,
+        "form_ctx":    {},
+        "refresh":     0,
+    }
     for k, v in defaults.items():
-        if k not in st.session_state: st.session_state[k] = v
+        if k not in st.session_state:
+            st.session_state[k] = v
 
-# ─── FORM & RENDERERS (Simplificados para brevedad) ───────────────────────────
-# ... (Mantén tus funciones render_form, render_cell y render_summary sin cambios)
+# ─── SPLASH SCREEN ────────────────────────────────────────────────────────────
+def render_splash():
+    """
+    Muestra la imagen LOGO.png a pantalla completa.
+    Se cierra automáticamente en 3.5 segundos o al hacer click.
+    No usa time.sleep() — el resto de la app renderiza normalmente detrás.
+    """
+    splash_path = os.path.join(os.path.dirname(__file__), "LOGO.png")
+    if not os.path.exists(splash_path):
+        splash_path = os.path.join(os.path.dirname(__file__), "splash.png")
+    if not os.path.exists(splash_path):
+        return
 
+    with open(splash_path, "rb") as f:
+        img_b64 = base64.b64encode(f.read()).decode()
+
+    st.markdown(f"""
+    <style>
+    #splash-overlay {{
+        position: fixed;
+        top: 0; left: 0;
+        width: 100vw; height: 100vh;
+        z-index: 2147483647;
+        background: #000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        animation: splashIn 0.6s ease;
+    }}
+    @keyframes splashIn  {{ from {{ opacity:0; }} to {{ opacity:1; }} }}
+    @keyframes splashOut {{ from {{ opacity:1; }} to {{ opacity:0; }} }}
+    #splash-overlay.closing {{
+        animation: splashOut 0.7s ease forwards;
+        pointer-events: none;
+    }}
+    #splash-overlay img {{
+        max-height: 100vh;
+        max-width: 100vw;
+        object-fit: contain;
+        user-select: none;
+        -webkit-user-drag: none;
+    }}
+    </style>
+
+    <div id="splash-overlay" onclick="closeSplash()">
+        <img src="data:image/png;base64,{img_b64}" draggable="false" />
+    </div>
+
+    <script>
+    function closeSplash() {{
+        var el = document.getElementById('splash-overlay');
+        if (!el || el.classList.contains('closing')) return;
+        el.classList.add('closing');
+        setTimeout(function() {{ if (el.parentNode) el.parentNode.removeChild(el); }}, 700);
+    }}
+    setTimeout(closeSplash, 3500);
+    </script>
+    """, unsafe_allow_html=True)
+
+# ─── FORM ─────────────────────────────────────────────────────────────────────
+def render_form(week_start, all_bookings):
+    ctx      = st.session_state.form_ctx
+    mode     = st.session_state.form_mode
+    day_date = ctx.get("day_date")
+    shift    = ctx.get("shift")
+    btype    = ctx.get("type")
+    bid      = ctx.get("booking_id")
+    is_edit  = mode == "edit"
+    existing = next((b for b in all_bookings if b["id"] == bid), {}) if is_edit else {}
+
+    day_b       = [b for b in all_bookings if b["day_date"] == str(day_date) and b["shift"] == shift]
+    kayak_pax   = sum(b["pax"] for b in day_b if b["type"] == "kayak")
+    snorkel_pax = sum(b["pax"] for b in day_b if b["type"] == "snorkel")
+    if is_edit:
+        if existing.get("type") == "kayak":   kayak_pax   -= existing.get("pax", 0)
+        else:                                  snorkel_pax -= existing.get("pax", 0)
+
+    max_pax   = KAYAK_MAX - kayak_pax if btype == "kayak" else SNORKEL_MAX - snorkel_pax
+    title_str = ("✏️ Editar" if is_edit else "➕ Agregar") + (" Kayak" if btype == "kayak" else " Snorkeling")
+    day_label = day_date.strftime("%A %b %d") if day_date else ""
+
+    st.markdown(f"### {title_str} — {day_label} · {shift}")
+    with st.form("booking_form", clear_on_submit=True):
+        guest = st.text_input("Nombre del huésped", value=existing.get("guest_name", ""))
+        room  = st.text_input("Habitación",          value=existing.get("room", "") or "")
+        pax   = st.number_input("PAX", min_value=1,
+                                max_value=max(1, max_pax),
+                                value=min(existing.get("pax", 1), max(1, max_pax)))
+        ktype = None
+        if btype == "kayak":
+            ktype = st.selectbox("Tipo", KAYAK_TYPES,
+                index=KAYAK_TYPES.index(existing["kayak_type"])
+                      if existing.get("kayak_type") in KAYAK_TYPES else 0)
+        c1, c2 = st.columns(2)
+        submitted = c1.form_submit_button("💾 Guardar")
+        cancelled = c2.form_submit_button("❌ Cancelar")
+
+    if submitted:
+        if not guest.strip():
+            st.error("El nombre del huésped es requerido.")
+        elif pax > max_pax:
+            st.error(f"No hay cupo. Disponible: {max_pax} PAX.")
+        else:
+            if is_edit:
+                update_booking(bid, guest.strip(), room.strip() or None, pax, ktype)
+            else:
+                add_booking(week_start, day_date, shift, btype,
+                            guest.strip(), room.strip() or None, pax, ktype)
+            st.session_state.form_open = False
+            st.session_state.refresh  += 1
+            st.rerun()
+    if cancelled:
+        st.session_state.form_open = False
+        st.rerun()
+
+# ─── CELL ─────────────────────────────────────────────────────────────────────
+def render_cell(day_date: date, shift: str, bookings: list):
+    day_b       = [b for b in bookings if b["day_date"] == str(day_date) and b["shift"] == shift]
+    kayak_list  = [b for b in day_b if b["type"] == "kayak"]
+    snorkel_list= [b for b in day_b if b["type"] == "snorkel"]
+    kayak_pax   = sum(b["pax"] for b in kayak_list)
+    snorkel_pax = sum(b["pax"] for b in snorkel_list)
+
+    # ── Kayak ──
+    k_bar, k_icon = capacity_bar(kayak_pax, KAYAK_MAX)
+    st.markdown(f"**🚣 Kayak** {k_icon} `{kayak_pax}/{KAYAK_MAX}`")
+    st.markdown(k_bar, unsafe_allow_html=True)
+    for b in kayak_list:
+        c1, c2 = st.columns([4, 1])
+        c1.markdown(
+            f"<small>👤 {b['guest_name']} · Rm {b['room'] or '-'} · "
+            f"{b['pax']} PAX · {b.get('kayak_type') or ''}</small>",
+            unsafe_allow_html=True)
+        with c2:
+            ec, dc = st.columns(2)
+            if ec.button("✏️", key=f"e_{b['id']}", help="Editar"):
+                st.session_state.form_open = True
+                st.session_state.form_mode = "edit"
+                st.session_state.form_ctx  = {"day_date": day_date, "shift": shift,
+                                               "type": "kayak", "booking_id": b["id"]}
+                st.rerun()
+            if dc.button("🗑️", key=f"d_{b['id']}", help="Borrar"):
+                delete_booking(b["id"])
+                st.session_state.refresh += 1
+                st.rerun()
+    if st.button("＋🚣", key=f"ak_{day_date}_{shift}", help="Agregar Kayak"):
+        st.session_state.form_open = True
+        st.session_state.form_mode = "add_kayak"
+        st.session_state.form_ctx  = {"day_date": day_date, "shift": shift, "type": "kayak"}
+        st.rerun()
+
+    # ── Snorkeling (solo si aplica) ──
+    if snorkel_allowed(day_date, shift):
+        st.markdown("---")
+        s_bar, s_icon = capacity_bar(snorkel_pax, SNORKEL_MAX)
+        st.markdown(f"**🤿 Snorkeling** {s_icon} `{snorkel_pax}/{SNORKEL_MAX}`")
+        st.markdown(s_bar, unsafe_allow_html=True)
+        for b in snorkel_list:
+            c1, c2 = st.columns([4, 1])
+            c1.markdown(
+                f"<small>👤 {b['guest_name']} · Rm {b['room'] or '-'} · {b['pax']} PAX</small>",
+                unsafe_allow_html=True)
+            with c2:
+                ec, dc = st.columns(2)
+                if ec.button("✏️", key=f"e_{b['id']}", help="Editar"):
+                    st.session_state.form_open = True
+                    st.session_state.form_mode = "edit"
+                    st.session_state.form_ctx  = {"day_date": day_date, "shift": shift,
+                                                   "type": "snorkel", "booking_id": b["id"]}
+                    st.rerun()
+                if dc.button("🗑️", key=f"d_{b['id']}", help="Borrar"):
+                    delete_booking(b["id"])
+                    st.session_state.refresh += 1
+                    st.rerun()
+        if st.button("＋🤿", key=f"as_{day_date}_{shift}", help="Agregar Snorkeling"):
+            st.session_state.form_open = True
+            st.session_state.form_mode = "add_snorkel"
+            st.session_state.form_ctx  = {"day_date": day_date, "shift": shift, "type": "snorkel"}
+            st.rerun()
+
+# ─── SUMMARY ──────────────────────────────────────────────────────────────────
+def render_summary(week_days_list, bookings):
+    st.markdown("---")
+    st.subheader("📋 Resumen semanal")
+    rows = []
+    for shift in SHIFTS:
+        for d in week_days_list:
+            day_b       = [b for b in bookings if b["day_date"] == str(d) and b["shift"] == shift]
+            kayak_pax   = sum(b["pax"] for b in day_b if b["type"] == "kayak")
+            snorkel_pax = sum(b["pax"] for b in day_b if b["type"] == "snorkel")
+            _, ki = capacity_bar(kayak_pax, KAYAK_MAX)
+            if snorkel_allowed(d, shift):
+                _, si = capacity_bar(snorkel_pax, SNORKEL_MAX)
+                snorkel_cell = f"{si} {snorkel_pax}/{SNORKEL_MAX}"
+            else:
+                snorkel_cell = "—"
+            rows.append({
+                "Turno":      shift,
+                "Día":        d.strftime("%a %b %d"),
+                "Kayak":      f"{ki} {kayak_pax}/{KAYAK_MAX}",
+                "Snorkeling": snorkel_cell,
+            })
+    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+
+# ─── MAIN ─────────────────────────────────────────────────────────────────────
 def main():
     st.set_page_config(page_title="Aquatic Reservations", page_icon="🌊", layout="wide")
     ss_init()
-    show_splash_screen()
+
+    # Splash solo en la primera carga de cada sesión
+    if not st.session_state.get("splash_done"):
+        st.session_state.splash_done = True
+        render_splash()
 
     week_start = week_start_from_offset(st.session_state.week_offset)
-    days = week_days(week_start)
-    week_end = days[-1]
+    days       = week_days(week_start)
+    week_end   = days[-1]
 
+    # ── Header ──
     st.title("🌊 Aquatic Reservations")
-    
-    # Navegación y lógica principal igual que antes...
+    st.markdown(f"### {ACTIVITY}")
+
+    # ── Navegación de semana ──
+    n1, n2, n3, n4 = st.columns([1, 2, 1, 1])
+    if n1.button("◀ Anterior"):
+        st.session_state.week_offset -= 1
+        st.session_state.form_open    = False
+        st.rerun()
+    n2.markdown(f"**{week_start.strftime('%b %d')} – {week_end.strftime('%b %d, %Y')}**")
+    if n3.button("Siguiente ▶"):
+        st.session_state.week_offset += 1
+        st.session_state.form_open    = False
+        st.rerun()
+    if n4.button("📅 Semana actual"):
+        st.session_state.week_offset = 0
+        st.session_state.form_open   = False
+        st.rerun()
+
+    # ── Cargar datos ──
     bookings = load_week(week_start)
-    # ... resto del código main ...
+
+    # ── Formulario ──
+    if st.session_state.form_open:
+        render_form(week_start, bookings)
+        st.stop()
+
+    # ── Leyenda snorkeling ──
+    with st.expander("ℹ️ Horarios de Snorkeling"):
+        st.markdown("""
+| Turno | Días con Snorkeling |
+|-------|---------------------|
+| 9:00 AM  | Martes · Jueves · Sábado |
+| 11:00 AM | *(solo Kayak)* |
+| 2:00 PM  | Lunes · Miércoles · Viernes · Domingo |
+        """)
+
+    # ── Tabs por turno ──
+    tabs = st.tabs([f"🕘 {s}" for s in SHIFTS])
+    for tab, shift in zip(tabs, SHIFTS):
+        with tab:
+            cols = st.columns(7)
+            for col, day in zip(cols, days):
+                with col:
+                    st.markdown(f"**{day.strftime('%a')}**  \n{day.strftime('%b %d')}")
+                    st.markdown("---")
+                    render_cell(day, shift, bookings)
+
+    # ── Resumen ──
+    render_summary(days, bookings)
 
 if __name__ == "__main__":
     main()
