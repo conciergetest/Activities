@@ -125,7 +125,7 @@ def render_splash():
     """, unsafe_allow_html=True)
 
     # Splash a pantalla completa — imagen de fondo + barra de progreso CSS
-    DURATION = 4.0   # segundos visibles
+    DURATION = 10.0   # segundos visibles
     st.markdown(f"""
     <style>
     .splash-wrap {{
@@ -133,7 +133,7 @@ def render_splash():
         top: 0; left: 0;
         width: 100vw; height: 100vh;
         z-index: 2147483647;
-        background: #000 url("data:image/png;base64,{img_b64}") center/contain no-repeat;
+        background: #87CEEB url("data:image/png;base64,{img_b64}") center/contain no-repeat;
         display: flex;
         flex-direction: column;
         justify-content: flex-end;
