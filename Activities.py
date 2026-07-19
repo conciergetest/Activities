@@ -332,6 +332,18 @@ def main():
     days       = week_days(week_start)
     week_end   = days[-1]
 
+    # ── CSS: tabs más grandes ──
+    st.markdown("""
+    <style>
+    button[data-baseweb="tab"] {
+        font-size: 1.15rem !important;
+        font-weight: 700 !important;
+        padding: 10px 24px !important;
+        letter-spacing: 0.02em;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
     # ── Header ──
     st.title("🌊 Aquatic Reservations")
     st.markdown(f"### {ACTIVITY}")
@@ -351,6 +363,24 @@ def main():
         st.session_state.week_offset = 0
         st.session_state.form_open   = False
         st.rerun()
+
+    # ── Almanaque: saltar a cualquier semana ──
+    cal1, cal2, cal3 = st.columns([1, 2, 5])
+    cal1.markdown("**🗓️ Ir a fecha:**")
+    picked = cal2.date_input(
+        "Ir a fecha",
+        value=week_start,
+        label_visibility="collapsed",
+        key="date_jumper",
+    )
+    if picked:
+        today_monday  = date.today() - timedelta(days=date.today().weekday())
+        picked_monday = picked       - timedelta(days=picked.weekday())
+        new_offset    = round((picked_monday - today_monday).days / 7)
+        if new_offset != st.session_state.week_offset:
+            st.session_state.week_offset = new_offset
+            st.session_state.form_open   = False
+            st.rerun()
 
     # ── Cargar datos ──
     bookings = load_week(week_start)
