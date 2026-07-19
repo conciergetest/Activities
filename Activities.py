@@ -2,6 +2,9 @@ import streamlit as st
 import sqlite3
 import pandas as pd
 from datetime import date, timedelta
+import time
+import base64
+from pathlib import Path
 
 # ─── CONFIG ───────────────────────────────────────────────────────────────────
 DB_FILE = "aquatic_bookings.db"
@@ -21,6 +24,167 @@ SNORKEL_SCHEDULE = {
 
 def snorkel_allowed(day_date: date, shift: str) -> bool:
     return day_date.weekday() in SNORKEL_SCHEDULE.get(shift, [])
+
+# ─── SPLASH SCREEN ────────────────────────────────────────────────────────────
+def get_base64_of_image(image_path):
+    """Convert image to base64 string"""
+    try:
+        with open(image_path, "rb") as img_file:
+            return base64.b64encode(img_file.read()).decode()
+    except FileNotFoundError:
+        return None
+
+def show_splash_screen():
+    """Display splash screen with Waldorf Astoria logo"""
+    
+    # Check if splash has already been shown
+    if 'splash_shown' not in st.session_state:
+        st.session_state.splash_shown = False
+    
+    if st.session_state.splash_shown:
+        return
+    
+    # Try to load the local image
+    image_path = Path("LOGO.png")
+    img_base64 = get_base64_of_image(image_path)
+    
+    # If local image not found, use a placeholder or you can paste a base64 string here
+    if img_base64:
+        img_src = f"data:image/png;base64,{img_base64}"
+    else:
+        # Fallback: you can replace this with your own base64 string or URL
+        # For now, we'll show a styled splash without the image but with the branding
+        img_src = None
+    
+    # Splash screen HTML/CSS
+    splash_html = f"""
+    <style>
+    #splash-overlay {{
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #001f3f 0%, #003d7a 50%, #0074D9 100%);
+        z-index: 999999;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        animation: fadeOut 0.5s ease-in-out 2.5s forwards;
+    }}
+    
+    #splash-overlay img {{
+        max-width: 80%;
+        max-height: 70vh;
+        border-radius: 12px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        animation: scaleIn 0.8s ease-out;
+    }}
+    
+    #splash-overlay .splash-text {{
+        color: white;
+        font-family: 'Georgia', serif;
+        text-align: center;
+        margin-top: 20px;
+        animation: slideUp 0.8s ease-out 0.3s both;
+    }}
+    
+    #splash-overlay .splash-text h1 {{
+        font-size: 2.5rem;
+        font-weight: 300;
+        letter-spacing: 4px;
+        margin-bottom: 10px;
+        text-transform: uppercase;
+    }}
+    
+    #splash-overlay .splash-text p {{
+        font-size: 1.1rem;
+        opacity: 0.8;
+        letter-spacing: 2px;
+    }}
+    
+    #splash-overlay .loading-bar {{
+        width: 200px;
+        height: 3px;
+        background: rgba(255,255,255,0.2);
+        border-radius: 3px;
+        margin-top: 30px;
+        overflow: hidden;
+    }}
+    
+    #splash-overlay .loading-bar::after {{
+        content: '';
+        display: block;
+        width: 0%;
+        height: 100%;
+        background: #D4AF37;
+        animation: loading 2s ease-in-out forwards;
+    }}
+    
+    @keyframes fadeOut {{
+        to {{
+            opacity: 0;
+            visibility: hidden;
+        }}
+    }}
+    
+    @keyframes scaleIn {{
+        from {{
+            transform: scale(0.8);
+            opacity: 0;
+        }}
+        to {{
+            transform: scale(1);
+            opacity: 1;
+        }}
+    }}
+    
+    @keyframes slideUp {{
+        from {{
+            transform: translateY(30px);
+            opacity: 0;
+        }}
+        to {{
+            transform: translateY(0);
+            opacity: 1;
+        }}
+    }}
+    
+    @keyframes loading {{
+        to {{
+            width: 100%;
+        }}
+    }}
+    
+    .main-content {{
+        animation: fadeIn 0.5s ease-in-out 2.5s both;
+    }}
+    
+    @keyframes fadeIn {{
+        from {{ opacity: 0; }}
+        to {{ opacity: 1; }}
+    }}
+    </style>
+    
+    <div id="splash-overlay">
+        {f'<img src="{img_src}" alt="Waldorf Astoria Costa Rica">' if img_src else ''}
+        <div class="splash-text">
+            <h1>Waldorf Astoria</h1>
+            <p>Costa Rica</p>
+            <div style="font-size: 0.9rem; margin-top: 15px; opacity: 0.6;">
+                RESERVACIONES KAYAK & SNORKELING
+            </div>
+        </div>
+        <div class="loading-bar"></div>
+    </div>
+    """
+    
+    st.markdown(splash_html, unsafe_allow_html=True)
+    st.session_state.splash_shown = True
+    
+    # Small delay to let the animation play
+    time.sleep(3)
 
 # ─── DATABASE ─────────────────────────────────────────────────────────────────
 def get_conn():
@@ -124,6 +288,7 @@ def ss_init():
         "form_mode": None,       # 'add_kayak', 'add_snorkel', 'edit'
         "form_ctx": {},          # day_date, shift, type, booking_id
         "refresh": 0,
+        "splash_shown": False,
     }
     for k, v in defaults.items():
         if k not in st.session_state:
@@ -266,8 +431,14 @@ def render_summary(week_days_list, bookings):
 # ─── MAIN ─────────────────────────────────────────────────────────────────────
 def main():
     st.set_page_config(page_title="Aquatic Reservations", page_icon="🌊", layout="wide")
-    init_db()
+    
+    # Initialize session state first
     ss_init()
+    
+    # Show splash screen before anything else
+    show_splash_screen()
+    
+    init_db()
 
     week_start = week_start_from_offset(st.session_state.week_offset)
     days = week_days(week_start)
