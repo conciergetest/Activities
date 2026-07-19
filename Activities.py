@@ -6,7 +6,7 @@ import os
 from datetime import date, timedelta
 
 # ─── CONFIG ───────────────────────────────────────────────────────────────────
-ACTIVITY = "Kayak Tour & Snorkeling"
+ACTIVITY = "Kayak Tour & Snorkeling | MADE BY FRED WAYNE"
 SHIFTS = ["9:00 AM", "11:00 AM", "2:00 PM"]
 KAYAK_MAX = 12
 SNORKEL_MAX = 8
