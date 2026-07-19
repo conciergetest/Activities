@@ -35,7 +35,7 @@ def get_base64_of_image(image_path):
         return None
 
 def show_splash_screen():
-    """Display splash screen with Waldorf Astoria logo"""
+    """Display splash screen with Waldorf Astoria logo for 15 seconds"""
     
     # Check if splash has already been shown
     if 'splash_shown' not in st.session_state:
@@ -53,10 +53,9 @@ def show_splash_screen():
         img_src = f"data:image/png;base64,{img_base64}"
     else:
         # Fallback: you can replace this with your own base64 string or URL
-        # For now, we'll show a styled splash without the image but with the branding
         img_src = None
     
-    # Splash screen HTML/CSS
+    # Splash screen HTML/CSS - 15 seconds duration
     splash_html = f"""
     <style>
     #splash-overlay {{
@@ -71,7 +70,7 @@ def show_splash_screen():
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        animation: fadeOut 0.5s ease-in-out 2.5s forwards;
+        animation: fadeOut 1s ease-in-out 14.5s forwards;
     }}
     
     #splash-overlay img {{
@@ -79,7 +78,7 @@ def show_splash_screen():
         max-height: 70vh;
         border-radius: 12px;
         box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-        animation: scaleIn 0.8s ease-out;
+        animation: scaleIn 1s ease-out;
     }}
     
     #splash-overlay .splash-text {{
@@ -87,7 +86,7 @@ def show_splash_screen():
         font-family: 'Georgia', serif;
         text-align: center;
         margin-top: 20px;
-        animation: slideUp 0.8s ease-out 0.3s both;
+        animation: slideUp 1s ease-out 0.5s both;
     }}
     
     #splash-overlay .splash-text h1 {{
@@ -119,7 +118,7 @@ def show_splash_screen():
         width: 0%;
         height: 100%;
         background: #D4AF37;
-        animation: loading 2s ease-in-out forwards;
+        animation: loading 14s ease-in-out forwards;
     }}
     
     @keyframes fadeOut {{
@@ -158,7 +157,7 @@ def show_splash_screen():
     }}
     
     .main-content {{
-        animation: fadeIn 0.5s ease-in-out 2.5s both;
+        animation: fadeIn 1s ease-in-out 14.5s both;
     }}
     
     @keyframes fadeIn {{
@@ -183,8 +182,8 @@ def show_splash_screen():
     st.markdown(splash_html, unsafe_allow_html=True)
     st.session_state.splash_shown = True
     
-    # Small delay to let the animation play
-    time.sleep(3)
+    # 15 seconds delay to let the animation play
+    time.sleep(15)
 
 # ─── DATABASE ─────────────────────────────────────────────────────────────────
 def get_conn():
