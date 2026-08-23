@@ -83,18 +83,16 @@ def ss_init():
         if k not in st.session_state:
             st.session_state[k] = v
 
-# ─── SPLASH SCREEN (LOGO.png - pantalla completa) ───────────────────────────
+# ─── SPLASH SCREEN (LOGO.png - pantalla completa SIN franjas negras) ────────
 def render_splash():
     import time
-    # Busca SOLO LOGO.png para el splash (la imagen grande de Waldorf Astoria)
     splash_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "LOGO.png")
     if not os.path.exists(splash_path):
-        return  # No hay splash, continúa directo
+        return
 
     with open(splash_path, "rb") as f:
         img_b64 = base64.b64encode(f.read()).decode()
 
-    # Ocultar chrome de Streamlit durante el splash
     st.markdown("""
     <style>
     #MainMenu, header, footer { visibility: hidden !important; }
@@ -112,7 +110,10 @@ def render_splash():
         top: 0; left: 0;
         width: 100vw; height: 100vh;
         z-index: 2147483647;
-        background: #000000 url("data:image/png;base64,{img_b64}") center/contain no-repeat;
+        background-image: url("data:image/png;base64,{img_b64}");
+        background-position: center;
+        background-size: cover;        /* ← COVER: llena toda la pantalla */
+        background-repeat: no-repeat;
         display: flex;
         flex-direction: column;
         justify-content: flex-end;
