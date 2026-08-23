@@ -83,20 +83,18 @@ def ss_init():
         if k not in st.session_state:
             st.session_state[k] = v
 
-# ─── SPLASH SCREEN ────────────────────────────────────────────────────────────
+# ─── SPLASH SCREEN (LOGO.png - pantalla completa) ───────────────────────────
 def render_splash():
     import time
-    for candidate in ["LogoWayne.png", "LOGO.png", "splash.png"]:
-        p = os.path.join(os.path.dirname(os.path.abspath(__file__)), candidate)
-        if os.path.exists(p):
-            splash_path = p
-            break
-    else:
-        return
+    # Busca SOLO LOGO.png para el splash (la imagen grande de Waldorf Astoria)
+    splash_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "LOGO.png")
+    if not os.path.exists(splash_path):
+        return  # No hay splash, continúa directo
 
     with open(splash_path, "rb") as f:
         img_b64 = base64.b64encode(f.read()).decode()
 
+    # Ocultar chrome de Streamlit durante el splash
     st.markdown("""
     <style>
     #MainMenu, header, footer { visibility: hidden !important; }
@@ -110,19 +108,42 @@ def render_splash():
     st.markdown(f"""
     <style>
     .splash-wrap {{
-        position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+        position: fixed;
+        top: 0; left: 0;
+        width: 100vw; height: 100vh;
         z-index: 2147483647;
-        background: #0e1117 url("data:image/png;base64,{img_b64}") center/contain no-repeat;
-        display: flex; flex-direction: column; justify-content: flex-end; align-items: center;
-        padding-bottom: 48px; box-sizing: border-box; animation: splashFadeIn 0.8s ease;
+        background: #000000 url("data:image/png;base64,{img_b64}") center/contain no-repeat;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        align-items: center;
+        padding-bottom: 48px;
+        box-sizing: border-box;
+        animation: splashFadeIn 0.8s ease;
     }}
     @keyframes splashFadeIn {{ from {{ opacity:0; }} to {{ opacity:1; }} }}
-    .splash-bar-track {{ width: 220px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden; }}
-    .splash-bar-fill {{ height: 100%; width: 0%; background: linear-gradient(90deg, #B8860B, #FFD700, #B8860B); border-radius: 4px; animation: barGrow {DURATION:.1f}s ease-in-out forwards; }}
+
+    .splash-bar-track {{
+        width: 220px;
+        height: 4px;
+        background: rgba(255,255,255,0.2);
+        border-radius: 4px;
+        overflow: hidden;
+    }}
+    .splash-bar-fill {{
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, #B8860B, #FFD700, #B8860B);
+        border-radius: 4px;
+        animation: barGrow {DURATION:.1f}s ease-in-out forwards;
+    }}
     @keyframes barGrow {{ from {{ width:0%; }} to {{ width:100%; }} }}
     </style>
+
     <div class="splash-wrap">
-        <div class="splash-bar-track"><div class="splash-bar-fill"></div></div>
+        <div class="splash-bar-track">
+            <div class="splash-bar-fill"></div>
+        </div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -466,15 +487,13 @@ def main():
     """, unsafe_allow_html=True)
 
     # ═══════════════════════════════════════════════════════════════════════════
-    # HEADER CON LOGO
+    # HEADER CON LogoWayne.png AL LADO DEL TÍTULO
     # ═══════════════════════════════════════════════════════════════════════════
     head_left, head_right = st.columns([5, 2])
 
     with head_left:
-        # Logo + texto en la misma fila
         logo_col, text_col = st.columns([1, 5])
         with logo_col:
-            # Muestra el logo si existe; si no, no pasa nada
             try:
                 st.image("LogoWayne.png", width=75)
             except Exception:
