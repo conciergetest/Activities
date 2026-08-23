@@ -86,7 +86,7 @@ def ss_init():
 # ─── SPLASH SCREEN ────────────────────────────────────────────────────────────
 def render_splash():
     import time
-    for candidate in ["LOGO.png", "splash.png"]:
+    for candidate in ["LogoWayne.png", "LOGO.png", "splash.png"]:
         p = os.path.join(os.path.dirname(os.path.abspath(__file__)), candidate)
         if os.path.exists(p):
             splash_path = p
@@ -112,7 +112,7 @@ def render_splash():
     .splash-wrap {{
         position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
         z-index: 2147483647;
-        background: #87CEEB url("data:image/png;base64,{img_b64}") center/contain no-repeat;
+        background: #0e1117 url("data:image/png;base64,{img_b64}") center/contain no-repeat;
         display: flex; flex-direction: column; justify-content: flex-end; align-items: center;
         padding-bottom: 48px; box-sizing: border-box; animation: splashFadeIn 0.8s ease;
     }}
@@ -466,32 +466,41 @@ def main():
     """, unsafe_allow_html=True)
 
     # ═══════════════════════════════════════════════════════════════════════════
-    # HEADER
+    # HEADER CON LOGO
     # ═══════════════════════════════════════════════════════════════════════════
     head_left, head_right = st.columns([5, 2])
 
     with head_left:
-        st.title("🌊 Aquatic Reservations")
-        st.markdown(
-            "<h3 style='margin-top:0 !important; margin-bottom:0.5rem !important; color:#f0f2f6 !important;'>"
-            "Kayak Tour & Snorkeling | Hecho por Fred Wayne (Concierge)"
-            "</h3>",
-            unsafe_allow_html=True
-        )
-        today = date.today()
-        meses_es = {
-            1: "Enero", 2: "Febrero", 3: "Marzo", 4: "Abril",
-            5: "Mayo", 6: "Junio", 7: "Julio", 8: "Agosto",
-            9: "Septiembre", 10: "Octubre", 11: "Noviembre", 12: "Diciembre"
-        }
-        fecha_str = f"{meses_es[today.month]} {today.day}, {today.year}"
-        st.markdown(
-            f"<div style='color:#00FFFF; font-size:1.1rem; font-weight:700; "
-            f"text-shadow: 0 0 8px rgba(0,255,255,0.4); margin-bottom:0.5rem;'>"
-            f"📅 {fecha_str}"
-            f"</div>",
-            unsafe_allow_html=True
-        )
+        # Logo + texto en la misma fila
+        logo_col, text_col = st.columns([1, 5])
+        with logo_col:
+            # Muestra el logo si existe; si no, no pasa nada
+            try:
+                st.image("LogoWayne.png", width=75)
+            except Exception:
+                st.markdown("🌊")
+        with text_col:
+            st.title("Aquatic Reservations")
+            st.markdown(
+                "<h3 style='margin-top:0 !important; margin-bottom:0.5rem !important; color:#f0f2f6 !important;'>"
+                "Kayak Tour & Snorkeling | Hecho por Fred Wayne (Concierge)"
+                "</h3>",
+                unsafe_allow_html=True
+            )
+            today = date.today()
+            meses_es = {
+                1: "Enero", 2: "Febrero", 3: "Marzo", 4: "Abril",
+                5: "Mayo", 6: "Junio", 7: "Julio", 8: "Agosto",
+                9: "Septiembre", 10: "Octubre", 11: "Noviembre", 12: "Diciembre"
+            }
+            fecha_str = f"{meses_es[today.month]} {today.day}, {today.year}"
+            st.markdown(
+                f"<div style='color:#00FFFF; font-size:1.1rem; font-weight:700; "
+                f"text-shadow: 0 0 8px rgba(0,255,255,0.4); margin-bottom:0.5rem;'>"
+                f"📅 {fecha_str}"
+                f"</div>",
+                unsafe_allow_html=True
+            )
 
     with head_right:
         components.html("""
@@ -582,7 +591,7 @@ def main():
     # ── Cargar datos ──
     bookings = load_week(week_start)
 
-    # ── DASHBOARD (solo KPIs + alertas + reservas hoy) ──
+    # ── DASHBOARD ──
     render_dashboard(bookings, days)
 
     # ── Formulario ──
