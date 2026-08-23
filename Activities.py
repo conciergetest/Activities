@@ -70,6 +70,9 @@ def capacity_bar(used, cap):
     icon = "✅" if used < cap else ("⚠️" if used == cap else "🚫")
     return bar, icon
 
+def shift_sort_key(shift: str) -> int:
+    return SHIFTS.index(shift) if shift in SHIFTS else 99
+
 # ─── SESSION STATE ────────────────────────────────────────────────────────────
 def ss_init():
     defaults = {
@@ -126,6 +129,85 @@ def render_splash():
     time.sleep(DURATION)
     st.session_state.splash_done = True
     st.rerun()
+
+# ─── DASHBOARD ───────────────────────────────────────────────────────────────
+def render_dashboard(bookings, days):
+    today_str = str(date.today())
+    today_bookings = [b for b in bookings if b["day_date"] == today_str]
+    today_kayak = sum(b["pax"] for b in today_bookings if b["type"] == "kayak")
+    today_snorkel = sum(b["pax"] for b in today_bookings if b["type"] == "snorkel")
+    total_week = len(bookings)
+    total_pax = sum(b["pax"] for b in bookings)
+
+    # ── KPIs ──
+    st.markdown("---")
+    k1, k2, k3, k4 = st.columns(4)
+    k1.metric("📅 Reservas hoy", len(today_bookings), delta=None)
+    k2.metric("🚣 Kayak hoy", f"{today_kayak}/{KAYAK_MAX}", delta=None)
+    k3.metric("🤿 Snorkel hoy", f"{today_snorkel}/{SNORKEL_MAX}", delta=None)
+    k4.metric("📊 Total semana", f"{total_week} reservas · {total_pax} PAX", delta=None)
+
+    # ── Alertas de cupo ──
+    alerts = []
+    for d in days:
+        for shift in SHIFTS:
+            day_b = [b for b in bookings if b["day_date"] == str(d) and b["shift"] == shift]
+            kayak_pax = sum(b["pax"] for b in day_b if b["type"] == "kayak")
+            snorkel_pax = sum(b["pax"] for b in day_b if b["type"] == "snorkel")
+            day_label = d.strftime("%a %b %d")
+
+            if kayak_pax >= KAYAK_MAX:
+                alerts.append(("🔴", f"Kayak LLENO — {day_label} · {shift}"))
+            elif kayak_pax >= KAYAK_MAX * 0.75:
+                alerts.append(("🟡", f"Kayak casi lleno ({kayak_pax}/{KAYAK_MAX}) — {day_label} · {shift}"))
+
+            if snorkel_allowed(d, shift):
+                if snorkel_pax >= SNORKEL_MAX:
+                    alerts.append(("🔴", f"Snorkeling LLENO — {day_label} · {shift}"))
+                elif snorkel_pax >= SNORKEL_MAX * 0.75:
+                    alerts.append(("🟡", f"Snorkeling casi lleno ({snorkel_pax}/{SNORKEL_MAX}) — {day_label} · {shift}"))
+
+    if alerts:
+        st.markdown("#### ⚠️ Alertas de cupo")
+        cols = st.columns(min(3, len(alerts)))
+        for i, (icon, msg) in enumerate(alerts[:6]):
+            with cols[i % len(cols)]:
+                st.warning(f"{icon} {msg}")
+
+    # ── Reservas de hoy destacadas ──
+    if today_bookings:
+        st.markdown("#### 📌 Reservas de hoy")
+        today_bookings.sort(key=lambda b: (shift_sort_key(b["shift"]), b["type"], b["guest_name"]))
+        rows = []
+        for b in today_bookings:
+            rows.append({
+                "Turno": b["shift"],
+                "Tipo": "🚣 Kayak" if b["type"] == "kayak" else "🤿 Snorkel",
+                "Huésped": b["guest_name"],
+                "Hab.": b["room"] or "—",
+                "PAX": b["pax"],
+                "Kayak": b.get("kayak_type") or "—",
+            })
+        st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+    else:
+        st.info("📭 No hay reservas para hoy.")
+
+    # ── Gráfico de ocupación por día ──
+    st.markdown("#### 📈 Ocupación por día (Kayak)")
+    chart_rows = []
+    for d in days:
+        day_b = [b for b in bookings if b["day_date"] == str(d)]
+        kayak_pax = sum(b["pax"] for b in day_b if b["type"] == "kayak")
+        snorkel_pax = sum(b["pax"] for b in day_b if b["type"] == "snorkel")
+        chart_rows.append({
+            "Día": d.strftime("%a %d"),
+            "Kayak": kayak_pax,
+            "Snorkel": snorkel_pax,
+        })
+    df_chart = pd.DataFrame(chart_rows)
+    st.bar_chart(df_chart.set_index("Día"), color=["#00FFFF", "#FF6B9D"], height=220)
+
+    st.markdown("---")
 
 # ─── FORM ─────────────────────────────────────────────────────────────────────
 def render_form(week_start, all_bookings):
@@ -303,6 +385,16 @@ def main():
         padding: 10px 24px !important;
         letter-spacing: 0.02em;
     }
+    [data-testid="stMetricValue"] {
+        font-size: 1.6rem !important;
+        font-weight: 700 !important;
+        color: #00FFFF !important;
+        text-shadow: 0 0 8px rgba(0,255,255,0.3);
+    }
+    [data-testid="stMetricLabel"] {
+        font-size: 0.85rem !important;
+        color: #cccccc !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -316,7 +408,6 @@ def main():
         st.markdown(f"### {ACTIVITY}")
 
     with head_right:
-        # Reloj en vivo con JavaScript real (funciona en Streamlit Cloud)
         components.html("""
         <style>
         #aquatic-clock {
@@ -404,6 +495,9 @@ def main():
 
     # ── Cargar datos ──
     bookings = load_week(week_start)
+
+    # ── DASHBOARD ──
+    render_dashboard(bookings, days)
 
     # ── Formulario ──
     if st.session_state.form_open:
