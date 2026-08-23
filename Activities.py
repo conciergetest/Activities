@@ -106,7 +106,7 @@ def render_splash():
     </style>
     """, unsafe_allow_html=True)
 
-    DURATION = 6.0   # ← 6 SEGUNDOS
+    DURATION = 6.0
     st.markdown(f"""
     <style>
     .splash-wrap {{
@@ -130,7 +130,7 @@ def render_splash():
     st.session_state.splash_done = True
     st.rerun()
 
-# ─── DASHBOARD ───────────────────────────────────────────────────────────────
+# ─── DASHBOARD (sin gráfico) ─────────────────────────────────────────────────
 def render_dashboard(bookings, days):
     today_str = str(date.today())
     today_bookings = [b for b in bookings if b["day_date"] == today_str]
@@ -188,20 +188,6 @@ def render_dashboard(bookings, days):
         st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
     else:
         st.info("📭 No hay reservas para hoy.")
-
-    st.markdown("#### 📈 Ocupación por día (Kayak)")
-    chart_rows = []
-    for d in days:
-        day_b = [b for b in bookings if b["day_date"] == str(d)]
-        kayak_pax = sum(b["pax"] for b in day_b if b["type"] == "kayak")
-        snorkel_pax = sum(b["pax"] for b in day_b if b["type"] == "snorkel")
-        chart_rows.append({
-            "Día": d.strftime("%a %d"),
-            "Kayak": kayak_pax,
-            "Snorkel": snorkel_pax,
-        })
-    df_chart = pd.DataFrame(chart_rows)
-    st.bar_chart(df_chart.set_index("Día"), color=["#00FFFF", "#FF6B9D"], height=220)
 
     st.markdown("---")
 
@@ -472,11 +458,6 @@ def main():
         border-radius: 10px !important;
         padding: 16px !important;
     }
-    [data-testid="stVegaLiteChart"] {
-        background-color: #161b22 !important;
-        border-radius: 10px !important;
-        padding: 8px !important;
-    }
     ::-webkit-scrollbar { width: 8px; }
     ::-webkit-scrollbar-track { background: #0e1117; }
     ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; }
@@ -485,20 +466,18 @@ def main():
     """, unsafe_allow_html=True)
 
     # ═══════════════════════════════════════════════════════════════════════════
-    # HEADER: Título + subtítulo + fecha | Reloj en vivo a la derecha
+    # HEADER
     # ═══════════════════════════════════════════════════════════════════════════
     head_left, head_right = st.columns([5, 2])
 
     with head_left:
         st.title("🌊 Aquatic Reservations")
-        # ── Subtítulo con crédito ──
         st.markdown(
             "<h3 style='margin-top:0 !important; margin-bottom:0.5rem !important; color:#f0f2f6 !important;'>"
             "Kayak Tour & Snorkeling | Hecho por Fred Wayne (Concierge)"
             "</h3>",
             unsafe_allow_html=True
         )
-        # ── Fecha actual del sistema en cyan ──
         today = date.today()
         meses_es = {
             1: "Enero", 2: "Febrero", 3: "Marzo", 4: "Abril",
@@ -603,7 +582,7 @@ def main():
     # ── Cargar datos ──
     bookings = load_week(week_start)
 
-    # ── DASHBOARD ──
+    # ── DASHBOARD (solo KPIs + alertas + reservas hoy) ──
     render_dashboard(bookings, days)
 
     # ── Formulario ──
