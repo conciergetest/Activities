@@ -7,7 +7,7 @@ from datetime import date, timedelta
 import streamlit.components.v1 as components
 
 # ─── CONFIG ───────────────────────────────────────────────────────────────────
-ACTIVITY = "Kayak Tour & Snorkeling"
+ACTIVITY = "Kayak Tour & Snorkeling|Hecho por Fred Wayne(Concierge)"
 SHIFTS = ["9:00 AM", "11:00 AM", "2:00 PM"]
 KAYAK_MAX = 12
 SNORKEL_MAX = 8
