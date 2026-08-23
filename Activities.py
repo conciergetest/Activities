@@ -7,7 +7,7 @@ from datetime import date, timedelta
 import streamlit.components.v1 as components
 
 # ─── CONFIG ───────────────────────────────────────────────────────────────────
-ACTIVITY = "Kayak Tour & Snorkeling|Hecho por Fred Wayne(Concierge)"
+ACTIVITY = "Kayak Tour & Snorkeling"
 SHIFTS = ["9:00 AM", "11:00 AM", "2:00 PM"]
 KAYAK_MAX = 12
 SNORKEL_MAX = 8
@@ -106,7 +106,7 @@ def render_splash():
     </style>
     """, unsafe_allow_html=True)
 
-    DURATION = 10.0
+    DURATION = 6.0   # ← 6 SEGUNDOS
     st.markdown(f"""
     <style>
     .splash-wrap {{
@@ -359,12 +359,9 @@ def main():
     days = week_days(week_start)
     week_end = days[-1]
 
-    # ═══════════════════════════════════════════════════════════════════════════
-    # CSS MODO OSCURO + estilos personalizados
-    # ═══════════════════════════════════════════════════════════════════════════
+    # ── CSS MODO OSCURO ──
     st.markdown("""
     <style>
-    /* ── Fondo oscuro global ── */
     html, body, [class*="css-"] {
         background-color: #0e1117 !important;
         color: #f0f2f6 !important;
@@ -376,8 +373,6 @@ def main():
         padding-top: 0.8rem !important;
         padding-bottom: 0.5rem !important;
     }
-
-    /* ── Títulos ── */
     h1 {
         margin-top: 0.3rem !important;
         margin-bottom: 0.2rem !important;
@@ -387,8 +382,6 @@ def main():
     h2, h3, h4, h5, h6 {
         color: #f0f2f6 !important;
     }
-
-    /* ── Métricas (KPIs) ── */
     [data-testid="stMetricValue"] {
         font-size: 1.6rem !important;
         font-weight: 700 !important;
@@ -405,8 +398,6 @@ def main():
         padding: 12px !important;
         border: 1px solid #21262d !important;
     }
-
-    /* ── Inputs, selectboxes, date_input ── */
     input, textarea, select, .stDateInput > div > div {
         background-color: #161b22 !important;
         color: #f0f2f6 !important;
@@ -417,8 +408,6 @@ def main():
         border-color: #00FFFF !important;
         box-shadow: 0 0 0 1px #00FFFF !important;
     }
-
-    /* ── Botones ── */
     button[kind="secondary"] {
         background-color: #21262d !important;
         color: #f0f2f6 !important;
@@ -437,8 +426,6 @@ def main():
     button[kind="primary"]:hover {
         background-color: #33FFFF !important;
     }
-
-    /* ── Tabs ── */
     button[data-baseweb="tab"] {
         font-size: 1.15rem !important;
         font-weight: 700 !important;
@@ -450,8 +437,6 @@ def main():
         color: #00FFFF !important;
         border-bottom-color: #00FFFF !important;
     }
-
-    /* ── DataFrames / tablas ── */
     .stDataFrame, [data-testid="stDataFrameResizable"] {
         background-color: #161b22 !important;
     }
@@ -465,8 +450,6 @@ def main():
         color: #f0f2f6 !important;
         border-bottom: 1px solid #21262d !important;
     }
-
-    /* ── Expander / acordeón ── */
     details {
         background-color: #161b22 !important;
         border: 1px solid #21262d !important;
@@ -476,8 +459,6 @@ def main():
         color: #f0f2f6 !important;
         font-weight: 600 !important;
     }
-
-    /* ── Alertas / info / warning ── */
     .stAlert {
         background-color: #161b22 !important;
         border-left-color: #f39c12 !important;
@@ -485,47 +466,53 @@ def main():
     .stAlert p {
         color: #f0f2f6 !important;
     }
-
-    /* ── Formularios ── */
     [data-testid="stForm"] {
         background-color: #161b22 !important;
         border: 1px solid #21262d !important;
         border-radius: 10px !important;
         padding: 16px !important;
     }
-
-    /* ── Gráfico de barras (Streamlit nativo) ── */
     [data-testid="stVegaLiteChart"] {
         background-color: #161b22 !important;
         border-radius: 10px !important;
         padding: 8px !important;
     }
-
-    /* ── Scrollbar oscura ── */
-    ::-webkit-scrollbar {
-        width: 8px;
-    }
-    ::-webkit-scrollbar-track {
-        background: #0e1117;
-    }
-    ::-webkit-scrollbar-thumb {
-        background: #30363d;
-        border-radius: 4px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-        background: #00FFFF;
-    }
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #0e1117; }
+    ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #00FFFF; }
     </style>
     """, unsafe_allow_html=True)
 
     # ═══════════════════════════════════════════════════════════════════════════
-    # HEADER: Título a la izquierda | Reloj en vivo a la derecha
+    # HEADER: Título + subtítulo + fecha | Reloj en vivo a la derecha
     # ═══════════════════════════════════════════════════════════════════════════
     head_left, head_right = st.columns([5, 2])
 
     with head_left:
         st.title("🌊 Aquatic Reservations")
-        st.markdown(f"### {ACTIVITY}")
+        # ── Subtítulo con crédito ──
+        st.markdown(
+            "<h3 style='margin-top:0 !important; margin-bottom:0.5rem !important; color:#f0f2f6 !important;'>"
+            "Kayak Tour & Snorkeling | Hecho por Fred Wayne (Concierge)"
+            "</h3>",
+            unsafe_allow_html=True
+        )
+        # ── Fecha actual del sistema en cyan ──
+        today = date.today()
+        meses_es = {
+            1: "Enero", 2: "Febrero", 3: "Marzo", 4: "Abril",
+            5: "Mayo", 6: "Junio", 7: "Julio", 8: "Agosto",
+            9: "Septiembre", 10: "Octubre", 11: "Noviembre", 12: "Diciembre"
+        }
+        fecha_str = f"{meses_es[today.month]} {today.day}, {today.year}"
+        st.markdown(
+            f"<div style='color:#00FFFF; font-size:1.1rem; font-weight:700; "
+            f"text-shadow: 0 0 8px rgba(0,255,255,0.4); margin-bottom:0.5rem;'>"
+            f"📅 {fecha_str}"
+            f"</div>",
+            unsafe_allow_html=True
+        )
 
     with head_right:
         components.html("""
