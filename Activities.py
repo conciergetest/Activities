@@ -332,9 +332,15 @@ def main():
     days       = week_days(week_start)
     week_end   = days[-1]
 
-    # ── CSS: tabs más grandes ──
+    # ── CSS: subir todo y tabs más grandes ──
     st.markdown("""
     <style>
+    .block-container {
+        padding-top: 0.5rem !important;
+        padding-bottom: 0.5rem !important;
+    }
+    h1 { margin-top: 0 !important; margin-bottom: 0.3rem !important; }
+    h3 { margin-top: 0 !important; margin-bottom: 0.5rem !important; }
     button[data-baseweb="tab"] {
         font-size: 1.15rem !important;
         font-weight: 700 !important;
@@ -354,7 +360,16 @@ def main():
         st.session_state.week_offset -= 1
         st.session_state.form_open    = False
         st.rerun()
-    n2.markdown(f"**{week_start.strftime('%b %d')} – {week_end.strftime('%b %d, %Y')}**")
+    
+    # ── FECHA EN CYAN BRILLANTE Y GRANDE ──
+    n2.markdown(
+        f"<div style='color:#00FFFF; font-size:1.5rem; font-weight:800; text-align:center; "
+        f"text-shadow: 0 0 10px rgba(0,255,255,0.5); letter-spacing:0.02em;'>"
+        f"{week_start.strftime('%b %d')} – {week_end.strftime('%b %d, %Y')}"
+        f"</div>",
+        unsafe_allow_html=True
+    )
+    
     if n3.button("Siguiente ▶"):
         st.session_state.week_offset += 1
         st.session_state.form_open    = False
@@ -416,4 +431,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
