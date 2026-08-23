@@ -324,7 +324,6 @@ def main():
     ss_init()
 
     # Splash solo en la primera carga de cada sesión
-    # render_splash() maneja splash_done internamente y llama st.rerun()
     if not st.session_state.get("splash_done"):
         render_splash()
 
@@ -332,15 +331,22 @@ def main():
     days       = week_days(week_start)
     week_end   = days[-1]
 
-    # ── CSS: subir todo y tabs más grandes ──
+    # ── CSS: subir todo SIN CORTAR el título + tabs grandes ──
     st.markdown("""
     <style>
     .block-container {
-        padding-top: 0.5rem !important;
+        padding-top: 0.8rem !important;
         padding-bottom: 0.5rem !important;
     }
-    h1 { margin-top: 0 !important; margin-bottom: 0.3rem !important; }
-    h3 { margin-top: 0 !important; margin-bottom: 0.5rem !important; }
+    h1 {
+        margin-top: 0.3rem !important;
+        margin-bottom: 0.2rem !important;
+        line-height: 1.25 !important;
+    }
+    h3 {
+        margin-top: 0 !important;
+        margin-bottom: 0.5rem !important;
+    }
     button[data-baseweb="tab"] {
         font-size: 1.15rem !important;
         font-weight: 700 !important;
@@ -348,6 +354,48 @@ def main():
         letter-spacing: 0.02em;
     }
     </style>
+    """, unsafe_allow_html=True)
+
+    # ── RELOJ EN VIVO: esquina superior derecha, cyan brillante ──
+    st.markdown("""
+    <style>
+    #live-clock-box {
+        position: fixed;
+        top: 12px;
+        right: 140px;
+        color: #00FFFF;
+        font-size: 0.95rem;
+        font-weight: 700;
+        text-shadow: 0 0 10px rgba(0,255,255,0.6);
+        z-index: 999999;
+        font-family: 'Segoe UI', sans-serif;
+        text-align: right;
+        line-height: 1.3;
+        pointer-events: none;
+    }
+    </style>
+    <div id="live-clock-box">
+        <div id="live-date" style="font-size:0.85rem; opacity:0.9;"></div>
+        <div id="live-time" style="font-size:1.15rem; letter-spacing:0.05em;"></div>
+    </div>
+    <script>
+    (function(){
+        function pad(n){ return n<10 ? '0'+n : n; }
+        function update(){
+            var now = new Date();
+            var days = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+            var months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+            var dStr = days[now.getDay()] + ' ' + now.getDate() + ' ' + months[now.getMonth()] + ' ' + now.getFullYear();
+            var tStr = pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
+            var elD = document.getElementById('live-date');
+            var elT = document.getElementById('live-time');
+            if(elD) elD.textContent = dStr;
+            if(elT) elT.textContent = tStr;
+        }
+        setInterval(update, 1000);
+        update();
+    })();
+    </script>
     """, unsafe_allow_html=True)
 
     # ── Header ──
