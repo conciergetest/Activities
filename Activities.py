@@ -139,7 +139,6 @@ def render_dashboard(bookings, days):
     total_week = len(bookings)
     total_pax = sum(b["pax"] for b in bookings)
 
-    # ── KPIs ──
     st.markdown("---")
     k1, k2, k3, k4 = st.columns(4)
     k1.metric("📅 Reservas hoy", len(today_bookings), delta=None)
@@ -147,7 +146,6 @@ def render_dashboard(bookings, days):
     k3.metric("🤿 Snorkel hoy", f"{today_snorkel}/{SNORKEL_MAX}", delta=None)
     k4.metric("📊 Total semana", f"{total_week} reservas · {total_pax} PAX", delta=None)
 
-    # ── Alertas de cupo ──
     alerts = []
     for d in days:
         for shift in SHIFTS:
@@ -174,7 +172,6 @@ def render_dashboard(bookings, days):
             with cols[i % len(cols)]:
                 st.warning(f"{icon} {msg}")
 
-    # ── Reservas de hoy destacadas ──
     if today_bookings:
         st.markdown("#### 📌 Reservas de hoy")
         today_bookings.sort(key=lambda b: (shift_sort_key(b["shift"]), b["type"], b["guest_name"]))
@@ -192,7 +189,6 @@ def render_dashboard(bookings, days):
     else:
         st.info("📭 No hay reservas para hoy.")
 
-    # ── Gráfico de ocupación por día ──
     st.markdown("#### 📈 Ocupación por día (Kayak)")
     chart_rows = []
     for d in days:
@@ -363,28 +359,36 @@ def main():
     days = week_days(week_start)
     week_end = days[-1]
 
-    # ── CSS global ──
+    # ═══════════════════════════════════════════════════════════════════════════
+    # CSS MODO OSCURO + estilos personalizados
+    # ═══════════════════════════════════════════════════════════════════════════
     st.markdown("""
     <style>
+    /* ── Fondo oscuro global ── */
+    html, body, [class*="css-"] {
+        background-color: #0e1117 !important;
+        color: #f0f2f6 !important;
+    }
+    .stApp {
+        background-color: #0e1117 !important;
+    }
     .block-container {
         padding-top: 0.8rem !important;
         padding-bottom: 0.5rem !important;
     }
+
+    /* ── Títulos ── */
     h1 {
         margin-top: 0.3rem !important;
         margin-bottom: 0.2rem !important;
         line-height: 1.3 !important;
+        color: #f0f2f6 !important;
     }
-    h3 {
-        margin-top: 0 !important;
-        margin-bottom: 0.5rem !important;
+    h2, h3, h4, h5, h6 {
+        color: #f0f2f6 !important;
     }
-    button[data-baseweb="tab"] {
-        font-size: 1.15rem !important;
-        font-weight: 700 !important;
-        padding: 10px 24px !important;
-        letter-spacing: 0.02em;
-    }
+
+    /* ── Métricas (KPIs) ── */
     [data-testid="stMetricValue"] {
         font-size: 1.6rem !important;
         font-weight: 700 !important;
@@ -394,6 +398,122 @@ def main():
     [data-testid="stMetricLabel"] {
         font-size: 0.85rem !important;
         color: #cccccc !important;
+    }
+    [data-testid="stMetric"] {
+        background: #161b22 !important;
+        border-radius: 10px !important;
+        padding: 12px !important;
+        border: 1px solid #21262d !important;
+    }
+
+    /* ── Inputs, selectboxes, date_input ── */
+    input, textarea, select, .stDateInput > div > div {
+        background-color: #161b22 !important;
+        color: #f0f2f6 !important;
+        border: 1px solid #30363d !important;
+        border-radius: 6px !important;
+    }
+    .stDateInput > div > div:focus-within {
+        border-color: #00FFFF !important;
+        box-shadow: 0 0 0 1px #00FFFF !important;
+    }
+
+    /* ── Botones ── */
+    button[kind="secondary"] {
+        background-color: #21262d !important;
+        color: #f0f2f6 !important;
+        border: 1px solid #30363d !important;
+    }
+    button[kind="secondary"]:hover {
+        background-color: #30363d !important;
+        border-color: #00FFFF !important;
+    }
+    button[kind="primary"] {
+        background-color: #00FFFF !important;
+        color: #0e1117 !important;
+        border: none !important;
+        font-weight: 700 !important;
+    }
+    button[kind="primary"]:hover {
+        background-color: #33FFFF !important;
+    }
+
+    /* ── Tabs ── */
+    button[data-baseweb="tab"] {
+        font-size: 1.15rem !important;
+        font-weight: 700 !important;
+        padding: 10px 24px !important;
+        letter-spacing: 0.02em;
+        color: #8b949e !important;
+    }
+    button[data-baseweb="tab"][aria-selected="true"] {
+        color: #00FFFF !important;
+        border-bottom-color: #00FFFF !important;
+    }
+
+    /* ── DataFrames / tablas ── */
+    .stDataFrame, [data-testid="stDataFrameResizable"] {
+        background-color: #161b22 !important;
+    }
+    .stDataFrame th {
+        background-color: #21262d !important;
+        color: #00FFFF !important;
+        font-weight: 700 !important;
+    }
+    .stDataFrame td {
+        background-color: #161b22 !important;
+        color: #f0f2f6 !important;
+        border-bottom: 1px solid #21262d !important;
+    }
+
+    /* ── Expander / acordeón ── */
+    details {
+        background-color: #161b22 !important;
+        border: 1px solid #21262d !important;
+        border-radius: 8px !important;
+    }
+    summary {
+        color: #f0f2f6 !important;
+        font-weight: 600 !important;
+    }
+
+    /* ── Alertas / info / warning ── */
+    .stAlert {
+        background-color: #161b22 !important;
+        border-left-color: #f39c12 !important;
+    }
+    .stAlert p {
+        color: #f0f2f6 !important;
+    }
+
+    /* ── Formularios ── */
+    [data-testid="stForm"] {
+        background-color: #161b22 !important;
+        border: 1px solid #21262d !important;
+        border-radius: 10px !important;
+        padding: 16px !important;
+    }
+
+    /* ── Gráfico de barras (Streamlit nativo) ── */
+    [data-testid="stVegaLiteChart"] {
+        background-color: #161b22 !important;
+        border-radius: 10px !important;
+        padding: 8px !important;
+    }
+
+    /* ── Scrollbar oscura ── */
+    ::-webkit-scrollbar {
+        width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+        background: #0e1117;
+    }
+    ::-webkit-scrollbar-thumb {
+        background: #30363d;
+        border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: #00FFFF;
     }
     </style>
     """, unsafe_allow_html=True)
