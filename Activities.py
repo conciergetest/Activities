@@ -118,9 +118,8 @@ def render_splash():
             radial-gradient(ellipse at 30% 60%, rgba(255,255,255,0.08) 0%, transparent 35%),
             radial-gradient(ellipse at 70% 45%, rgba(255,255,255,0.1) 0%, transparent 42%),
             linear-gradient(180deg, #0c2a4a 0%, #164e7a 25%, #1e6a9e 50%, #2d8ab8 75%, #4aa8d8 100%);
-        background-image: url("data:image/png;base64,{img_b64}");
         background-position: center;
-        background-size: contain;
+        background-size: cover;
         background-repeat: no-repeat;
         display: flex;
         flex-direction: column;
@@ -132,7 +131,22 @@ def render_splash():
     }}
     @keyframes splashFadeIn {{ from {{ opacity:0; }} to {{ opacity:1; }} }}
 
+    /* ── LOGO COMO CAPA INDEPENDIENTE ── */
+    .splash-logo {{
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background-image: url("data:image/png;base64,{img_b64}");
+        background-position: center;
+        background-size: contain;
+        background-repeat: no-repeat;
+        z-index: 1;
+        pointer-events: none;
+    }}
+
     .splash-bar-track {{
+        position: relative;
+        z-index: 2;
         width: 220px;
         height: 4px;
         background: rgba(255,255,255,0.25);
@@ -150,6 +164,7 @@ def render_splash():
     </style>
 
     <div class="splash-wrap">
+        <div class="splash-logo"></div>
         <div class="splash-bar-track">
             <div class="splash-bar-fill"></div>
         </div>
