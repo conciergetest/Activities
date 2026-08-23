@@ -4,6 +4,7 @@ import pandas as pd
 import base64
 import os
 from datetime import date, timedelta
+import streamlit.components.v1 as components
 
 # ─── CONFIG ───────────────────────────────────────────────────────────────────
 ACTIVITY = "Kayak Tour & Snorkeling"
@@ -12,11 +13,10 @@ KAYAK_MAX = 12
 SNORKEL_MAX = 8
 KAYAK_TYPES = ["Type ①", "Type ②"]
 
-# weekday(): 0=Mon, 1=Tue, 2=Wed, 3=Thu, 4=Fri, 5=Sat, 6=Sun
 SNORKEL_SCHEDULE = {
-    "9:00 AM":  [1, 3, 5],    # Tue, Thu, Sat
-    "11:00 AM": [],            # No snorkeling
-    "2:00 PM":  [0, 2, 4, 6], # Mon, Wed, Fri, Sun
+    "9:00 AM":  [1, 3, 5],
+    "11:00 AM": [],
+    "2:00 PM":  [0, 2, 4, 6],
 }
 
 def snorkel_allowed(day_date: date, shift: str) -> bool:
@@ -37,22 +37,15 @@ def load_week(week_start: date):
 
 def add_booking(week_start, day_date, shift, btype, guest_name, room, pax, kayak_type=None):
     get_supabase().table("bookings").insert({
-        "week_start": str(week_start),
-        "day_date":   str(day_date),
-        "shift":      shift,
-        "type":       btype,
-        "guest_name": guest_name,
-        "room":       room,
-        "pax":        pax,
-        "kayak_type": kayak_type,
+        "week_start": str(week_start), "day_date": str(day_date),
+        "shift": shift, "type": btype, "guest_name": guest_name,
+        "room": room, "pax": pax, "kayak_type": kayak_type,
     }).execute()
 
 def update_booking(bid, guest_name, room, pax, kayak_type=None):
     get_supabase().table("bookings").update({
-        "guest_name": guest_name,
-        "room":       room,
-        "pax":        pax,
-        "kayak_type": kayak_type,
+        "guest_name": guest_name, "room": room,
+        "pax": pax, "kayak_type": kayak_type,
     }).eq("id", bid).execute()
 
 def delete_booking(bid):
@@ -72,8 +65,7 @@ def capacity_bar(used, cap):
     color = "#2ecc71" if pct < 0.75 else ("#f39c12" if pct < 1.0 else "#e74c3c")
     bar = (
         f'<div style="background:#333;border-radius:4px;height:8px;margin:2px 0 4px 0;">'
-        f'<div style="background:{color};width:{pct*100:.0f}%;height:100%;border-radius:4px;"></div>'
-        f'</div>'
+        f'<div style="background:{color};width:{pct*100:.0f}%;height:100%;border-radius:4px;"></div></div>'
     )
     icon = "✅" if used < cap else ("⚠️" if used == cap else "🚫")
     return bar, icon
@@ -81,11 +73,8 @@ def capacity_bar(used, cap):
 # ─── SESSION STATE ────────────────────────────────────────────────────────────
 def ss_init():
     defaults = {
-        "week_offset": 0,
-        "form_open":   False,
-        "form_mode":   None,
-        "form_ctx":    {},
-        "refresh":     0,
+        "week_offset": 0, "form_open": False,
+        "form_mode": None, "form_ctx": {}, "refresh": 0,
     }
     for k, v in defaults.items():
         if k not in st.session_state:
@@ -93,28 +82,18 @@ def ss_init():
 
 # ─── SPLASH SCREEN ────────────────────────────────────────────────────────────
 def render_splash():
-    """
-    Splash a pantalla completa con barra de progreso dorada.
-    Usa time.sleep() + st.rerun() — funciona 100% en Streamlit Cloud.
-    Sin JavaScript: la barra de progreso es CSS puro.
-    Duración: ~4 segundos.
-    """
     import time
-
-    # Buscar la imagen
     for candidate in ["LOGO.png", "splash.png"]:
         p = os.path.join(os.path.dirname(os.path.abspath(__file__)), candidate)
         if os.path.exists(p):
             splash_path = p
             break
     else:
-        # No hay imagen; saltamos el splash
         return
 
     with open(splash_path, "rb") as f:
         img_b64 = base64.b64encode(f.read()).decode()
 
-    # Ocultar chrome de Streamlit durante el splash
     st.markdown("""
     <style>
     #MainMenu, header, footer { visibility: hidden !important; }
@@ -124,89 +103,64 @@ def render_splash():
     </style>
     """, unsafe_allow_html=True)
 
-    # Splash a pantalla completa — imagen de fondo + barra de progreso CSS
-    DURATION = 10.0   # segundos visibles
+    DURATION = 10.0
     st.markdown(f"""
     <style>
     .splash-wrap {{
-        position: fixed;
-        top: 0; left: 0;
-        width: 100vw; height: 100vh;
+        position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
         z-index: 2147483647;
         background: #87CEEB url("data:image/png;base64,{img_b64}") center/contain no-repeat;
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-end;
-        align-items: center;
-        padding-bottom: 48px;
-        box-sizing: border-box;
-        animation: splashFadeIn 0.8s ease;
+        display: flex; flex-direction: column; justify-content: flex-end; align-items: center;
+        padding-bottom: 48px; box-sizing: border-box; animation: splashFadeIn 0.8s ease;
     }}
     @keyframes splashFadeIn {{ from {{ opacity:0; }} to {{ opacity:1; }} }}
-
-    .splash-bar-track {{
-        width: 220px;
-        height: 4px;
-        background: rgba(255,255,255,0.2);
-        border-radius: 4px;
-        overflow: hidden;
-    }}
-    .splash-bar-fill {{
-        height: 100%;
-        width: 0%;
-        background: linear-gradient(90deg, #B8860B, #FFD700, #B8860B);
-        border-radius: 4px;
-        animation: barGrow {DURATION:.1f}s ease-in-out forwards;
-    }}
+    .splash-bar-track {{ width: 220px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden; }}
+    .splash-bar-fill {{ height: 100%; width: 0%; background: linear-gradient(90deg, #B8860B, #FFD700, #B8860B); border-radius: 4px; animation: barGrow {DURATION:.1f}s ease-in-out forwards; }}
     @keyframes barGrow {{ from {{ width:0%; }} to {{ width:100%; }} }}
     </style>
-
     <div class="splash-wrap">
-        <div class="splash-bar-track">
-            <div class="splash-bar-fill"></div>
-        </div>
+        <div class="splash-bar-track"><div class="splash-bar-fill"></div></div>
     </div>
     """, unsafe_allow_html=True)
 
-    # El CSS ya anima la barra; el sleep garantiza la duración en el servidor
     time.sleep(DURATION)
     st.session_state.splash_done = True
     st.rerun()
 
 # ─── FORM ─────────────────────────────────────────────────────────────────────
 def render_form(week_start, all_bookings):
-    ctx      = st.session_state.form_ctx
-    mode     = st.session_state.form_mode
+    ctx = st.session_state.form_ctx
+    mode = st.session_state.form_mode
     day_date = ctx.get("day_date")
-    shift    = ctx.get("shift")
-    btype    = ctx.get("type")
-    bid      = ctx.get("booking_id")
-    is_edit  = mode == "edit"
+    shift = ctx.get("shift")
+    btype = ctx.get("type")
+    bid = ctx.get("booking_id")
+    is_edit = mode == "edit"
     existing = next((b for b in all_bookings if b["id"] == bid), {}) if is_edit else {}
 
-    day_b       = [b for b in all_bookings if b["day_date"] == str(day_date) and b["shift"] == shift]
-    kayak_pax   = sum(b["pax"] for b in day_b if b["type"] == "kayak")
+    day_b = [b for b in all_bookings if b["day_date"] == str(day_date) and b["shift"] == shift]
+    kayak_pax = sum(b["pax"] for b in day_b if b["type"] == "kayak")
     snorkel_pax = sum(b["pax"] for b in day_b if b["type"] == "snorkel")
     if is_edit:
-        if existing.get("type") == "kayak":   kayak_pax   -= existing.get("pax", 0)
-        else:                                  snorkel_pax -= existing.get("pax", 0)
+        if existing.get("type") == "kayak":
+            kayak_pax -= existing.get("pax", 0)
+        else:
+            snorkel_pax -= existing.get("pax", 0)
 
-    max_pax   = KAYAK_MAX - kayak_pax if btype == "kayak" else SNORKEL_MAX - snorkel_pax
+    max_pax = KAYAK_MAX - kayak_pax if btype == "kayak" else SNORKEL_MAX - snorkel_pax
     title_str = ("✏️ Editar" if is_edit else "➕ Agregar") + (" Kayak" if btype == "kayak" else " Snorkeling")
     day_label = day_date.strftime("%A %b %d") if day_date else ""
 
     st.markdown(f"### {title_str} — {day_label} · {shift}")
     with st.form("booking_form", clear_on_submit=True):
         guest = st.text_input("Nombre del huésped", value=existing.get("guest_name", ""))
-        room  = st.text_input("Habitación",          value=existing.get("room", "") or "")
-        pax   = st.number_input("PAX", min_value=1,
-                                max_value=max(1, max_pax),
-                                value=min(existing.get("pax", 1), max(1, max_pax)))
+        room = st.text_input("Habitación", value=existing.get("room", "") or "")
+        pax = st.number_input("PAX", min_value=1, max_value=max(1, max_pax),
+                              value=min(existing.get("pax", 1), max(1, max_pax)))
         ktype = None
         if btype == "kayak":
             ktype = st.selectbox("Tipo", KAYAK_TYPES,
-                index=KAYAK_TYPES.index(existing["kayak_type"])
-                      if existing.get("kayak_type") in KAYAK_TYPES else 0)
+                index=KAYAK_TYPES.index(existing["kayak_type"]) if existing.get("kayak_type") in KAYAK_TYPES else 0)
         c1, c2 = st.columns(2)
         submitted = c1.form_submit_button("💾 Guardar")
         cancelled = c2.form_submit_button("❌ Cancelar")
@@ -223,7 +177,7 @@ def render_form(week_start, all_bookings):
                 add_booking(week_start, day_date, shift, btype,
                             guest.strip(), room.strip() or None, pax, ktype)
             st.session_state.form_open = False
-            st.session_state.refresh  += 1
+            st.session_state.refresh += 1
             st.rerun()
     if cancelled:
         st.session_state.form_open = False
@@ -231,13 +185,12 @@ def render_form(week_start, all_bookings):
 
 # ─── CELL ─────────────────────────────────────────────────────────────────────
 def render_cell(day_date: date, shift: str, bookings: list):
-    day_b       = [b for b in bookings if b["day_date"] == str(day_date) and b["shift"] == shift]
-    kayak_list  = [b for b in day_b if b["type"] == "kayak"]
-    snorkel_list= [b for b in day_b if b["type"] == "snorkel"]
-    kayak_pax   = sum(b["pax"] for b in kayak_list)
+    day_b = [b for b in bookings if b["day_date"] == str(day_date) and b["shift"] == shift]
+    kayak_list = [b for b in day_b if b["type"] == "kayak"]
+    snorkel_list = [b for b in day_b if b["type"] == "snorkel"]
+    kayak_pax = sum(b["pax"] for b in kayak_list)
     snorkel_pax = sum(b["pax"] for b in snorkel_list)
 
-    # ── Kayak ──
     k_bar, k_icon = capacity_bar(kayak_pax, KAYAK_MAX)
     st.markdown(f"**🚣 Kayak** {k_icon} `{kayak_pax}/{KAYAK_MAX}`")
     st.markdown(k_bar, unsafe_allow_html=True)
@@ -252,8 +205,8 @@ def render_cell(day_date: date, shift: str, bookings: list):
             if ec.button("✏️", key=f"e_{b['id']}", help="Editar"):
                 st.session_state.form_open = True
                 st.session_state.form_mode = "edit"
-                st.session_state.form_ctx  = {"day_date": day_date, "shift": shift,
-                                               "type": "kayak", "booking_id": b["id"]}
+                st.session_state.form_ctx = {"day_date": day_date, "shift": shift,
+                                              "type": "kayak", "booking_id": b["id"]}
                 st.rerun()
             if dc.button("🗑️", key=f"d_{b['id']}", help="Borrar"):
                 delete_booking(b["id"])
@@ -262,10 +215,9 @@ def render_cell(day_date: date, shift: str, bookings: list):
     if st.button("＋🚣", key=f"ak_{day_date}_{shift}", help="Agregar Kayak"):
         st.session_state.form_open = True
         st.session_state.form_mode = "add_kayak"
-        st.session_state.form_ctx  = {"day_date": day_date, "shift": shift, "type": "kayak"}
+        st.session_state.form_ctx = {"day_date": day_date, "shift": shift, "type": "kayak"}
         st.rerun()
 
-    # ── Snorkeling (solo si aplica) ──
     if snorkel_allowed(day_date, shift):
         st.markdown("---")
         s_bar, s_icon = capacity_bar(snorkel_pax, SNORKEL_MAX)
@@ -281,8 +233,8 @@ def render_cell(day_date: date, shift: str, bookings: list):
                 if ec.button("✏️", key=f"e_{b['id']}", help="Editar"):
                     st.session_state.form_open = True
                     st.session_state.form_mode = "edit"
-                    st.session_state.form_ctx  = {"day_date": day_date, "shift": shift,
-                                                   "type": "snorkel", "booking_id": b["id"]}
+                    st.session_state.form_ctx = {"day_date": day_date, "shift": shift,
+                                                  "type": "snorkel", "booking_id": b["id"]}
                     st.rerun()
                 if dc.button("🗑️", key=f"d_{b['id']}", help="Borrar"):
                     delete_booking(b["id"])
@@ -291,7 +243,7 @@ def render_cell(day_date: date, shift: str, bookings: list):
         if st.button("＋🤿", key=f"as_{day_date}_{shift}", help="Agregar Snorkeling"):
             st.session_state.form_open = True
             st.session_state.form_mode = "add_snorkel"
-            st.session_state.form_ctx  = {"day_date": day_date, "shift": shift, "type": "snorkel"}
+            st.session_state.form_ctx = {"day_date": day_date, "shift": shift, "type": "snorkel"}
             st.rerun()
 
 # ─── SUMMARY ──────────────────────────────────────────────────────────────────
@@ -301,8 +253,8 @@ def render_summary(week_days_list, bookings):
     rows = []
     for shift in SHIFTS:
         for d in week_days_list:
-            day_b       = [b for b in bookings if b["day_date"] == str(d) and b["shift"] == shift]
-            kayak_pax   = sum(b["pax"] for b in day_b if b["type"] == "kayak")
+            day_b = [b for b in bookings if b["day_date"] == str(d) and b["shift"] == shift]
+            kayak_pax = sum(b["pax"] for b in day_b if b["type"] == "kayak")
             snorkel_pax = sum(b["pax"] for b in day_b if b["type"] == "snorkel")
             _, ki = capacity_bar(kayak_pax, KAYAK_MAX)
             if snorkel_allowed(d, shift):
@@ -311,9 +263,8 @@ def render_summary(week_days_list, bookings):
             else:
                 snorkel_cell = "—"
             rows.append({
-                "Turno":      shift,
-                "Día":        d.strftime("%a %b %d"),
-                "Kayak":      f"{ki} {kayak_pax}/{KAYAK_MAX}",
+                "Turno": shift, "Día": d.strftime("%a %b %d"),
+                "Kayak": f"{ki} {kayak_pax}/{KAYAK_MAX}",
                 "Snorkeling": snorkel_cell,
             })
     st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
@@ -323,15 +274,14 @@ def main():
     st.set_page_config(page_title="Aquatic Reservations", page_icon="🌊", layout="wide")
     ss_init()
 
-    # Splash solo en la primera carga de cada sesión
     if not st.session_state.get("splash_done"):
         render_splash()
 
     week_start = week_start_from_offset(st.session_state.week_offset)
-    days       = week_days(week_start)
-    week_end   = days[-1]
+    days = week_days(week_start)
+    week_end = days[-1]
 
-    # ── CSS: subir todo SIN CORTAR el título + tabs grandes ──
+    # ── CSS global ──
     st.markdown("""
     <style>
     .block-container {
@@ -341,7 +291,7 @@ def main():
     h1 {
         margin-top: 0.3rem !important;
         margin-bottom: 0.2rem !important;
-        line-height: 1.25 !important;
+        line-height: 1.3 !important;
     }
     h3 {
         margin-top: 0 !important;
@@ -356,60 +306,71 @@ def main():
     </style>
     """, unsafe_allow_html=True)
 
-    # ── RELOJ EN VIVO: esquina superior derecha, cyan brillante ──
-    st.markdown("""
-    <style>
-    #live-clock-box {
-        position: fixed;
-        top: 12px;
-        right: 140px;
-        color: #00FFFF;
-        font-size: 0.95rem;
-        font-weight: 700;
-        text-shadow: 0 0 10px rgba(0,255,255,0.6);
-        z-index: 999999;
-        font-family: 'Segoe UI', sans-serif;
-        text-align: right;
-        line-height: 1.3;
-        pointer-events: none;
-    }
-    </style>
-    <div id="live-clock-box">
-        <div id="live-date" style="font-size:0.85rem; opacity:0.9;"></div>
-        <div id="live-time" style="font-size:1.15rem; letter-spacing:0.05em;"></div>
-    </div>
-    <script>
-    (function(){
-        function pad(n){ return n<10 ? '0'+n : n; }
-        function update(){
-            var now = new Date();
-            var days = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-            var months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-            var dStr = days[now.getDay()] + ' ' + now.getDate() + ' ' + months[now.getMonth()] + ' ' + now.getFullYear();
-            var tStr = pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
-            var elD = document.getElementById('live-date');
-            var elT = document.getElementById('live-time');
-            if(elD) elD.textContent = dStr;
-            if(elT) elT.textContent = tStr;
+    # ═══════════════════════════════════════════════════════════════════════════
+    # HEADER: Título a la izquierda | Reloj en vivo a la derecha
+    # ═══════════════════════════════════════════════════════════════════════════
+    head_left, head_right = st.columns([5, 2])
+
+    with head_left:
+        st.title("🌊 Aquatic Reservations")
+        st.markdown(f"### {ACTIVITY}")
+
+    with head_right:
+        # Reloj en vivo con JavaScript real (funciona en Streamlit Cloud)
+        components.html("""
+        <style>
+        #aquatic-clock {
+            color: #00FFFF;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            text-align: right;
+            line-height: 1.25;
+            text-shadow: 0 0 12px rgba(0,255,255,0.55);
+            padding-top: 6px;
         }
-        setInterval(update, 1000);
-        update();
-    })();
-    </script>
-    """, unsafe_allow_html=True)
+        #aquatic-clock .clk-date {
+            font-size: 0.82rem;
+            opacity: 0.92;
+            font-weight: 600;
+        }
+        #aquatic-clock .clk-time {
+            font-size: 1.35rem;
+            font-weight: 800;
+            letter-spacing: 0.06em;
+        }
+        </style>
+        <div id="aquatic-clock">
+            <div class="clk-date" id="ac-date"></div>
+            <div class="clk-time" id="ac-time"></div>
+        </div>
+        <script>
+        (function(){
+            function pad(n){ return n<10 ? '0'+n : n; }
+            var days = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+            var months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+            function update(){
+                var now = new Date();
+                var dStr = days[now.getDay()] + ', ' + now.getDate() + ' ' + months[now.getMonth()] + ' ' + now.getFullYear();
+                var tStr = pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
+                var elD = document.getElementById('ac-date');
+                var elT = document.getElementById('ac-time');
+                if(elD) elD.textContent = dStr;
+                if(elT) elT.textContent = tStr;
+            }
+            setInterval(update, 1000);
+            update();
+        })();
+        </script>
+        """, height=65)
 
-    # ── Header ──
-    st.title("🌊 Aquatic Reservations")
-    st.markdown(f"### {ACTIVITY}")
-
-    # ── Navegación de semana ──
+    # ═══════════════════════════════════════════════════════════════════════════
+    # NAVEGACIÓN DE SEMANA
+    # ═══════════════════════════════════════════════════════════════════════════
     n1, n2, n3, n4 = st.columns([1, 2, 1, 1])
     if n1.button("◀ Anterior"):
         st.session_state.week_offset -= 1
-        st.session_state.form_open    = False
+        st.session_state.form_open = False
         st.rerun()
-    
-    # ── FECHA EN CYAN BRILLANTE Y GRANDE ──
+
     n2.markdown(
         f"<div style='color:#00FFFF; font-size:1.5rem; font-weight:800; text-align:center; "
         f"text-shadow: 0 0 10px rgba(0,255,255,0.5); letter-spacing:0.02em;'>"
@@ -417,32 +378,28 @@ def main():
         f"</div>",
         unsafe_allow_html=True
     )
-    
+
     if n3.button("Siguiente ▶"):
         st.session_state.week_offset += 1
-        st.session_state.form_open    = False
+        st.session_state.form_open = False
         st.rerun()
     if n4.button("📅 Semana actual"):
         st.session_state.week_offset = 0
-        st.session_state.form_open   = False
+        st.session_state.form_open = False
         st.rerun()
 
-    # ── Almanaque: saltar a cualquier semana ──
+    # ── Almanaque ──
     cal1, cal2, cal3 = st.columns([1, 2, 5])
     cal1.markdown("**🗓️ Ir a fecha:**")
-    picked = cal2.date_input(
-        "Ir a fecha",
-        value=week_start,
-        label_visibility="collapsed",
-        key="date_jumper",
-    )
+    picked = cal2.date_input("Ir a fecha", value=week_start,
+                             label_visibility="collapsed", key="date_jumper")
     if picked:
-        today_monday  = date.today() - timedelta(days=date.today().weekday())
-        picked_monday = picked       - timedelta(days=picked.weekday())
-        new_offset    = round((picked_monday - today_monday).days / 7)
+        today_monday = date.today() - timedelta(days=date.today().weekday())
+        picked_monday = picked - timedelta(days=picked.weekday())
+        new_offset = round((picked_monday - today_monday).days / 7)
         if new_offset != st.session_state.week_offset:
             st.session_state.week_offset = new_offset
-            st.session_state.form_open   = False
+            st.session_state.form_open = False
             st.rerun()
 
     # ── Cargar datos ──
