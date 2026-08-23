@@ -83,7 +83,7 @@ def ss_init():
         if k not in st.session_state:
             st.session_state[k] = v
 
-# ─── SPLASH SCREEN (LOGO.png - pantalla completa SIN franjas negras) ────────
+# ─── SPLASH SCREEN (LOGO.png - imagen completa sin cortar) ───────────────────
 def render_splash():
     import time
     splash_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "LOGO.png")
@@ -110,9 +110,10 @@ def render_splash():
         top: 0; left: 0;
         width: 100vw; height: 100vh;
         z-index: 2147483647;
+        background-color: #0e1117;               /* ← Fondo igual al de la app */
         background-image: url("data:image/png;base64,{img_b64}");
         background-position: center;
-        background-size: cover;        /* ← COVER: llena toda la pantalla */
+        background-size: contain;                  /* ← Imagen completa sin cortar */
         background-repeat: no-repeat;
         display: flex;
         flex-direction: column;
