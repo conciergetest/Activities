@@ -83,7 +83,7 @@ def ss_init():
         if k not in st.session_state:
             st.session_state[k] = v
 
-# ─── SPLASH SCREEN (LOGO.png - imagen completa sin cortar) ───────────────────
+# ─── SPLASH SCREEN (fondo azul marino con nubes) ────────────────────────────
 def render_splash():
     import time
     splash_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "LOGO.png")
@@ -110,10 +110,17 @@ def render_splash():
         top: 0; left: 0;
         width: 100vw; height: 100vh;
         z-index: 2147483647;
-        background-color: #0e1117;               /* ← Fondo igual al de la app */
+        /* ── FONDO AZUL MARINO CON NUBES ── */
+        background:
+            radial-gradient(ellipse at 15% 25%, rgba(255,255,255,0.18) 0%, transparent 45%),
+            radial-gradient(ellipse at 85% 15%, rgba(255,255,255,0.12) 0%, transparent 40%),
+            radial-gradient(ellipse at 50% 75%, rgba(255,255,255,0.15) 0%, transparent 50%),
+            radial-gradient(ellipse at 30% 60%, rgba(255,255,255,0.08) 0%, transparent 35%),
+            radial-gradient(ellipse at 70% 45%, rgba(255,255,255,0.1) 0%, transparent 42%),
+            linear-gradient(180deg, #0c2a4a 0%, #164e7a 25%, #1e6a9e 50%, #2d8ab8 75%, #4aa8d8 100%);
         background-image: url("data:image/png;base64,{img_b64}");
         background-position: center;
-        background-size: contain;                  /* ← Imagen completa sin cortar */
+        background-size: contain;
         background-repeat: no-repeat;
         display: flex;
         flex-direction: column;
@@ -128,7 +135,7 @@ def render_splash():
     .splash-bar-track {{
         width: 220px;
         height: 4px;
-        background: rgba(255,255,255,0.2);
+        background: rgba(255,255,255,0.25);
         border-radius: 4px;
         overflow: hidden;
     }}
