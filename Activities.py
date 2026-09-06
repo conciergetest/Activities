@@ -523,11 +523,13 @@ def main():
             except Exception:
                 st.markdown("🌊")
         with text_col:
-            st.title("Aquatic Reservations")
             st.markdown(
-                "<h3 style='margin-top:0 !important; margin-bottom:0.5rem !important; color:#f0f2f6 !important;'>"
+                "<div style='display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:0.5rem;'>"
+                "<h1 style='margin:0 !important; line-height:1.3 !important; color:#f0f2f6 !important; font-size:2.25rem;'>Aquatic Reservations</h1>"
+                "<h3 style='margin:0 !important; line-height:1.3 !important; color:#f0f2f6 !important; font-size:1.17rem; opacity:0.85;'>"
                 "Kayak Tour & Snorkeling | Hecho por Fred Wayne (Concierge)"
-                "</h3>",
+                "</h3>"
+                "</div>",
                 unsafe_allow_html=True
             )
             today = date.today()
