@@ -99,22 +99,24 @@ def render_splash():
     section[data-testid="stSidebar"] { display: none !important; }
     div[data-testid="stToolbar"] { display: none !important; }
     .block-container { padding-top: 0 !important; padding-bottom: 0 !important; }
-        button[kind="secondary"] p {
-        font-size: 0.75rem !important;
+        button[kind="secondary"] {
+        padding: 2px 6px !important;
+        min-height: 24px !important;
+        font-size: 0.7rem !important;
+    }
+    button[kind="secondary"] p {
+        font-size: 0.7rem !important;
         font-weight: 600 !important;
         color: #f0f2f6 !important;
     }
-    button[kind="secondary"] {
-        padding: 4px 8px !important;
-        min-height: 28px !important;
+    button[kind="primary"] {
+        padding: 2px 6px !important;
+        min-height: 24px !important;
+        font-size: 0.7rem !important;
     }
     button[kind="primary"] p {
-        font-size: 0.75rem !important;
+        font-size: 0.7rem !important;
         font-weight: 600 !important;
-    }
-    button[kind="primary"] {
-        padding: 4px 8px !important;
-        min-height: 28px !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -325,14 +327,14 @@ def render_cell(day_date: date, shift: str, bookings: list):
             f"<small>👤 {b['guest_name']} · Rm {b['room'] or '-'} · "
             f"{b['pax']} PAX · {b.get('kayak_type') or ''}</small>",
             unsafe_allow_html=True)
-        ec, dc = st.columns(2)
-        if ec.button("✎ Edit", key=f"e_{b['id']}", help="Editar reserva", use_container_width=True):
+        ec, dc = st.columns([1, 1])
+        if ec.button("✎", key=f"e_{b['id']}", help="Editar"):
             st.session_state.form_open = True
             st.session_state.form_mode = "edit"
             st.session_state.form_ctx = {"day_date": day_date, "shift": shift,
                                           "type": "kayak", "booking_id": b["id"]}
             st.rerun()
-        if dc.button("🗑 Del", key=f"d_{b['id']}", help="Borrar reserva", use_container_width=True):
+        if dc.button("🗑", key=f"d_{b['id']}", help="Borrar"):
             delete_booking(b["id"])
             st.session_state.refresh += 1
             st.rerun()
@@ -351,14 +353,14 @@ def render_cell(day_date: date, shift: str, bookings: list):
             st.markdown(
                 f"<small>👤 {b['guest_name']} · Rm {b['room'] or '-'} · {b['pax']} PAX</small>",
                 unsafe_allow_html=True)
-            ec, dc = st.columns(2)
-            if ec.button("✎ Edit", key=f"e_{b['id']}", help="Editar reserva", use_container_width=True):
+            ec, dc = st.columns([1, 1])
+            if ec.button("✎", key=f"e_{b['id']}", help="Editar"):
                 st.session_state.form_open = True
                 st.session_state.form_mode = "edit"
                 st.session_state.form_ctx = {"day_date": day_date, "shift": shift,
                                               "type": "snorkel", "booking_id": b["id"]}
                 st.rerun()
-            if dc.button("🗑 Del", key=f"d_{b['id']}", help="Borrar reserva", use_container_width=True):
+            if dc.button("🗑", key=f"d_{b['id']}", help="Borrar"):
                 delete_booking(b["id"])
                 st.session_state.refresh += 1
                 st.rerun()
@@ -520,22 +522,24 @@ def main():
     ::-webkit-scrollbar-track { background: #0e1117; }
     ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: #00FFFF; }
-        button[kind="secondary"] p {
-        font-size: 0.75rem !important;
+        button[kind="secondary"] {
+        padding: 2px 6px !important;
+        min-height: 24px !important;
+        font-size: 0.7rem !important;
+    }
+    button[kind="secondary"] p {
+        font-size: 0.7rem !important;
         font-weight: 600 !important;
         color: #f0f2f6 !important;
     }
-    button[kind="secondary"] {
-        padding: 4px 8px !important;
-        min-height: 28px !important;
+    button[kind="primary"] {
+        padding: 2px 6px !important;
+        min-height: 24px !important;
+        font-size: 0.7rem !important;
     }
     button[kind="primary"] p {
-        font-size: 0.75rem !important;
+        font-size: 0.7rem !important;
         font-weight: 600 !important;
-    }
-    button[kind="primary"] {
-        padding: 4px 8px !important;
-        min-height: 28px !important;
     }
     </style>
     """, unsafe_allow_html=True)
