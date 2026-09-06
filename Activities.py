@@ -370,29 +370,6 @@ def render_cell(day_date: date, shift: str, bookings: list):
             st.session_state.form_ctx = {"day_date": day_date, "shift": shift, "type": "snorkel"}
             st.rerun()
 
-# ─── SUMMARY ──────────────────────────────────────────────────────────────────
-def render_summary(week_days_list, bookings):
-    st.markdown("---")
-    st.subheader("📋 Resumen semanal")
-    rows = []
-    for shift in SHIFTS:
-        for d in week_days_list:
-            day_b = [b for b in bookings if b["day_date"] == str(d) and b["shift"] == shift]
-            kayak_pax = sum(b["pax"] for b in day_b if b["type"] == "kayak")
-            snorkel_pax = sum(b["pax"] for b in day_b if b["type"] == "snorkel")
-            _, ki = capacity_bar(kayak_pax, KAYAK_MAX)
-            if snorkel_allowed(d, shift):
-                _, si = capacity_bar(snorkel_pax, SNORKEL_MAX)
-                snorkel_cell = f"{si} {snorkel_pax}/{SNORKEL_MAX}"
-            else:
-                snorkel_cell = "—"
-            rows.append({
-                "Turno": shift, "Día": d.strftime("%a %b %d"),
-                "Kayak": f"{ki} {kayak_pax}/{KAYAK_MAX}",
-                "Snorkeling": snorkel_cell,
-            })
-    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
-
 # ─── MAIN ─────────────────────────────────────────────────────────────────────
 def main():
     st.set_page_config(page_title="Aquatic Reservations", page_icon="🌊", layout="wide")
@@ -705,9 +682,6 @@ def main():
                     )
                     st.markdown("---")
                     render_cell(day, shift, bookings)
-
-    # ── Resumen ──
-    render_summary(days, bookings)
 
 if __name__ == "__main__":
     main()
