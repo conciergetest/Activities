@@ -99,6 +99,23 @@ def render_splash():
     section[data-testid="stSidebar"] { display: none !important; }
     div[data-testid="stToolbar"] { display: none !important; }
     .block-container { padding-top: 0 !important; padding-bottom: 0 !important; }
+        button[kind="secondary"] p {
+        font-size: 0.75rem !important;
+        font-weight: 600 !important;
+        color: #f0f2f6 !important;
+    }
+    button[kind="secondary"] {
+        padding: 4px 8px !important;
+        min-height: 28px !important;
+    }
+    button[kind="primary"] p {
+        font-size: 0.75rem !important;
+        font-weight: 600 !important;
+    }
+    button[kind="primary"] {
+        padding: 4px 8px !important;
+        min-height: 28px !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -304,23 +321,21 @@ def render_cell(day_date: date, shift: str, bookings: list):
     st.markdown(f"**🚣 Kayak** {k_icon} `{kayak_pax}/{KAYAK_MAX}`")
     st.markdown(k_bar, unsafe_allow_html=True)
     for b in kayak_list:
-        c1, c2 = st.columns([4, 1])
-        c1.markdown(
+        st.markdown(
             f"<small>👤 {b['guest_name']} · Rm {b['room'] or '-'} · "
             f"{b['pax']} PAX · {b.get('kayak_type') or ''}</small>",
             unsafe_allow_html=True)
-        with c2:
-            ec, dc = st.columns(2)
-            if ec.button("Edit", key=f"e_{b['id']}", help="Editar reserva"):
-                st.session_state.form_open = True
-                st.session_state.form_mode = "edit"
-                st.session_state.form_ctx = {"day_date": day_date, "shift": shift,
-                                              "type": "kayak", "booking_id": b["id"]}
-                st.rerun()
-            if dc.button("Del", key=f"d_{b['id']}", help="Borrar reserva"):
-                delete_booking(b["id"])
-                st.session_state.refresh += 1
-                st.rerun()
+        ec, dc = st.columns(2)
+        if ec.button("✎ Edit", key=f"e_{b['id']}", help="Editar reserva", use_container_width=True):
+            st.session_state.form_open = True
+            st.session_state.form_mode = "edit"
+            st.session_state.form_ctx = {"day_date": day_date, "shift": shift,
+                                          "type": "kayak", "booking_id": b["id"]}
+            st.rerun()
+        if dc.button("🗑 Del", key=f"d_{b['id']}", help="Borrar reserva", use_container_width=True):
+            delete_booking(b["id"])
+            st.session_state.refresh += 1
+            st.rerun()
     if st.button("＋🚣", key=f"ak_{day_date}_{shift}", help="Agregar Kayak"):
         st.session_state.form_open = True
         st.session_state.form_mode = "add_kayak"
@@ -333,22 +348,20 @@ def render_cell(day_date: date, shift: str, bookings: list):
         st.markdown(f"**🤿 Snorkeling** {s_icon} `{snorkel_pax}/{SNORKEL_MAX}`")
         st.markdown(s_bar, unsafe_allow_html=True)
         for b in snorkel_list:
-            c1, c2 = st.columns([4, 1])
-            c1.markdown(
+            st.markdown(
                 f"<small>👤 {b['guest_name']} · Rm {b['room'] or '-'} · {b['pax']} PAX</small>",
                 unsafe_allow_html=True)
-            with c2:
-                ec, dc = st.columns(2)
-                if ec.button("Edit", key=f"e_{b['id']}", help="Editar reserva"):
-                    st.session_state.form_open = True
-                    st.session_state.form_mode = "edit"
-                    st.session_state.form_ctx = {"day_date": day_date, "shift": shift,
-                                                  "type": "snorkel", "booking_id": b["id"]}
-                    st.rerun()
-                if dc.button("Del", key=f"d_{b['id']}", help="Borrar reserva"):
-                    delete_booking(b["id"])
-                    st.session_state.refresh += 1
-                    st.rerun()
+            ec, dc = st.columns(2)
+            if ec.button("✎ Edit", key=f"e_{b['id']}", help="Editar reserva", use_container_width=True):
+                st.session_state.form_open = True
+                st.session_state.form_mode = "edit"
+                st.session_state.form_ctx = {"day_date": day_date, "shift": shift,
+                                              "type": "snorkel", "booking_id": b["id"]}
+                st.rerun()
+            if dc.button("🗑 Del", key=f"d_{b['id']}", help="Borrar reserva", use_container_width=True):
+                delete_booking(b["id"])
+                st.session_state.refresh += 1
+                st.rerun()
         if st.button("＋🤿", key=f"as_{day_date}_{shift}", help="Agregar Snorkeling"):
             st.session_state.form_open = True
             st.session_state.form_mode = "add_snorkel"
@@ -507,6 +520,23 @@ def main():
     ::-webkit-scrollbar-track { background: #0e1117; }
     ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: #00FFFF; }
+        button[kind="secondary"] p {
+        font-size: 0.75rem !important;
+        font-weight: 600 !important;
+        color: #f0f2f6 !important;
+    }
+    button[kind="secondary"] {
+        padding: 4px 8px !important;
+        min-height: 28px !important;
+    }
+    button[kind="primary"] p {
+        font-size: 0.75rem !important;
+        font-weight: 600 !important;
+    }
+    button[kind="primary"] {
+        padding: 4px 8px !important;
+        min-height: 28px !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
