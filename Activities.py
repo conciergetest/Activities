@@ -78,19 +78,19 @@ def build_logo_html(filename: str = "LogoWayne.png", size: int = 104):
         return None
     with open(path, "rb") as f:
         b64 = base64.b64encode(f.read()).decode()
-    inner = int(size * 0.80)
     return f"""
     <div style="display:flex; align-items:center; justify-content:center;
-                height:100%; min-height:{size + 8}px;">
-      <div style="width:{size}px; height:{size}px; border-radius:50%;
+                width:100%; padding:6px 2px; box-sizing:border-box; overflow:visible;">
+      <div style="width:100%; max-width:{size}px; aspect-ratio:1/1; border-radius:50%;
                   display:flex; align-items:center; justify-content:center;
+                  box-sizing:border-box; flex:0 0 auto; overflow:hidden;
                   background:radial-gradient(circle at 50% 38%, #17293c 0%, #0e1117 72%);
                   border:1px solid rgba(0,255,255,0.35);
                   box-shadow:0 0 22px rgba(0,255,255,0.22),
                              inset 0 0 20px rgba(0,255,255,0.06);">
         <img src="data:image/png;base64,{b64}"
              alt="Logo"
-             style="width:{inner}px; height:{inner}px; object-fit:contain;
+             style="width:80%; height:80%; object-fit:contain; display:block;
                     image-rendering:-webkit-optimize-contrast;
                     filter:drop-shadow(0 2px 6px rgba(0,0,0,0.65)) contrast(1.06) saturate(1.12);" />
       </div>
@@ -555,7 +555,7 @@ def main():
     head_left, head_right = st.columns([5, 2])
 
     with head_left:
-        logo_col, text_col = st.columns([1, 5])
+        logo_col, text_col = st.columns([1, 4])
         with logo_col:
             logo_html = build_logo_html()
             if logo_html:
@@ -578,13 +578,15 @@ def main():
     with head_right:
         components.html("""
         <style>
+        html, body { margin:0 !important; padding:0 !important; overflow:visible !important; }
         #aquatic-clock {
             color: #00FFFF;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             text-align: right;
-            line-height: 1.25;
+            line-height: 1.35;
             text-shadow: 0 0 12px rgba(0,255,255,0.55);
-            padding-top: 6px;
+            padding: 26px 4px 8px 0;
+            box-sizing: border-box;
         }
         #aquatic-clock .clk-time {
             font-size: 1.45rem;
@@ -634,7 +636,7 @@ def main():
             update();
         })();
         </script>
-        """, height=80)
+        """, height=115)
 
     # ═══════════════════════════════════════════════════════════════════════════
     # NAVEGACIÓN DE SEMANA
