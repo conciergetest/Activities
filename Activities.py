@@ -70,6 +70,34 @@ def capacity_bar(used, cap):
     icon = "✅" if used < cap else ("⚠️" if used == cap else "🚫")
     return bar, icon
 
+def build_logo_html(filename: str = "LogoWayne.png", size: int = 104):
+    """Logo del header en alta calidad: base64 embebido, sin reescalado borroso."""
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    path = os.path.join(base_dir, filename)
+    if not os.path.exists(path):
+        return None
+    with open(path, "rb") as f:
+        b64 = base64.b64encode(f.read()).decode()
+    inner = int(size * 0.80)
+    return f"""
+    <div style="display:flex; align-items:center; justify-content:center;
+                height:100%; min-height:{size + 8}px;">
+      <div style="width:{size}px; height:{size}px; border-radius:50%;
+                  display:flex; align-items:center; justify-content:center;
+                  background:radial-gradient(circle at 50% 38%, #17293c 0%, #0e1117 72%);
+                  border:1px solid rgba(0,255,255,0.35);
+                  box-shadow:0 0 22px rgba(0,255,255,0.22),
+                             inset 0 0 20px rgba(0,255,255,0.06);">
+        <img src="data:image/png;base64,{b64}"
+             alt="Logo"
+             style="width:{inner}px; height:{inner}px; object-fit:contain;
+                    image-rendering:-webkit-optimize-contrast;
+                    filter:drop-shadow(0 2px 6px rgba(0,0,0,0.65)) contrast(1.06) saturate(1.12);" />
+      </div>
+    </div>
+    """
+
+
 def shift_sort_key(shift: str) -> int:
     return SHIFTS.index(shift) if shift in SHIFTS else 99
 
@@ -529,10 +557,14 @@ def main():
     with head_left:
         logo_col, text_col = st.columns([1, 5])
         with logo_col:
-            try:
-                st.image("LogoWayne.png", width=75)
-            except Exception:
-                st.markdown("🌊")
+            logo_html = build_logo_html()
+            if logo_html:
+                st.markdown(logo_html, unsafe_allow_html=True)
+            else:
+                st.markdown(
+                    "<div style='font-size:3rem; text-align:center;'>🌊</div>",
+                    unsafe_allow_html=True
+                )
         with text_col:
             st.markdown(
                 "<div style='display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:0.5rem;'>"
@@ -543,21 +575,6 @@ def main():
                 "</div>",
                 unsafe_allow_html=True
             )
-            today = date.today()
-            meses_es = {
-                1: "Enero", 2: "Febrero", 3: "Marzo", 4: "Abril",
-                5: "Mayo", 6: "Junio", 7: "Julio", 8: "Agosto",
-                9: "Septiembre", 10: "Octubre", 11: "Noviembre", 12: "Diciembre"
-            }
-            fecha_str = f"{meses_es[today.month]} {today.day}, {today.year}"
-            st.markdown(
-                f"<div style='color:#00FFFF; font-size:1.1rem; font-weight:700; "
-                f"text-shadow: 0 0 8px rgba(0,255,255,0.4); margin-bottom:0.5rem;'>"
-                f"📅 {fecha_str}"
-                f"</div>",
-                unsafe_allow_html=True
-            )
-
     with head_right:
         components.html("""
         <style>
@@ -569,40 +586,55 @@ def main():
             text-shadow: 0 0 12px rgba(0,255,255,0.55);
             padding-top: 6px;
         }
+        #aquatic-clock .clk-time {
+            font-size: 1.45rem;
+            font-weight: 800;
+            letter-spacing: 0.05em;
+        }
+        #aquatic-clock .clk-ampm {
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-left: 4px;
+            opacity: 0.95;
+        }
         #aquatic-clock .clk-date {
-            font-size: 0.82rem;
+            font-size: 0.9rem;
             opacity: 0.92;
             font-weight: 600;
-        }
-        #aquatic-clock .clk-time {
-            font-size: 1.35rem;
-            font-weight: 800;
-            letter-spacing: 0.06em;
+            margin-top: 2px;
         }
         </style>
         <div id="aquatic-clock">
+            <div class="clk-time"><span id="ac-time"></span><span class="clk-ampm" id="ac-ampm"></span></div>
             <div class="clk-date" id="ac-date"></div>
-            <div class="clk-time" id="ac-time"></div>
         </div>
         <script>
         (function(){
             function pad(n){ return n<10 ? '0'+n : n; }
             var days = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
-            var months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+            var months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio',
+                          'Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
             function update(){
                 var now = new Date();
-                var dStr = days[now.getDay()] + ', ' + now.getDate() + ' ' + months[now.getMonth()] + ' ' + now.getFullYear();
-                var tStr = pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
-                var elD = document.getElementById('ac-date');
+                var h24 = now.getHours();
+                var ampm = h24 >= 12 ? 'PM' : 'AM';
+                var h12 = h24 % 12;
+                if (h12 === 0) h12 = 12;
+                var tStr = h12 + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
+                var dStr = days[now.getDay()] + ', ' + now.getDate() + ' de ' +
+                           months[now.getMonth()] + ' de ' + now.getFullYear();
                 var elT = document.getElementById('ac-time');
-                if(elD) elD.textContent = dStr;
+                var elA = document.getElementById('ac-ampm');
+                var elD = document.getElementById('ac-date');
                 if(elT) elT.textContent = tStr;
+                if(elA) elA.textContent = ampm;
+                if(elD) elD.textContent = dStr;
             }
             setInterval(update, 1000);
             update();
         })();
         </script>
-        """, height=65)
+        """, height=80)
 
     # ═══════════════════════════════════════════════════════════════════════════
     # NAVEGACIÓN DE SEMANA
