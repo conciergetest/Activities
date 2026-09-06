@@ -693,9 +693,16 @@ def main():
     for tab, shift in zip(tabs, SHIFTS):
         with tab:
             cols = st.columns(7)
-            for col, day in zip(cols, days):
+            for idx, (col, day) in enumerate(zip(cols, days)):
                 with col:
-                    st.markdown(f"**{day.strftime('%a')}**  \n{day.strftime('%b %d')}")
+                    # Línea divisoria entre días (excepto el último)
+                    border_style = "border-right: 1px solid #30363d; padding-right: 8px; margin-right: -8px;" if idx < 6 else ""
+                    st.markdown(
+                        f"<div style="{border_style}">"
+                        f"<strong>{day.strftime('%a')}</strong><br>{day.strftime('%b %d')}"
+                        f"</div>",
+                        unsafe_allow_html=True
+                    )
                     st.markdown("---")
                     render_cell(day, shift, bookings)
 
