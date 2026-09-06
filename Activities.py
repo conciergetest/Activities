@@ -311,13 +311,13 @@ def render_cell(day_date: date, shift: str, bookings: list):
             unsafe_allow_html=True)
         with c2:
             ec, dc = st.columns(2)
-            if ec.button("✏️", key=f"e_{b['id']}", help="Editar"):
+            if ec.button("Edit", key=f"e_{b['id']}", help="Editar reserva"):
                 st.session_state.form_open = True
                 st.session_state.form_mode = "edit"
                 st.session_state.form_ctx = {"day_date": day_date, "shift": shift,
                                               "type": "kayak", "booking_id": b["id"]}
                 st.rerun()
-            if dc.button("🗑️", key=f"d_{b['id']}", help="Borrar"):
+            if dc.button("Del", key=f"d_{b['id']}", help="Borrar reserva"):
                 delete_booking(b["id"])
                 st.session_state.refresh += 1
                 st.rerun()
@@ -339,13 +339,13 @@ def render_cell(day_date: date, shift: str, bookings: list):
                 unsafe_allow_html=True)
             with c2:
                 ec, dc = st.columns(2)
-                if ec.button("✏️", key=f"e_{b['id']}", help="Editar"):
+                if ec.button("Edit", key=f"e_{b['id']}", help="Editar reserva"):
                     st.session_state.form_open = True
                     st.session_state.form_mode = "edit"
                     st.session_state.form_ctx = {"day_date": day_date, "shift": shift,
                                                   "type": "snorkel", "booking_id": b["id"]}
                     st.rerun()
-                if dc.button("🗑️", key=f"d_{b['id']}", help="Borrar"):
+                if dc.button("Del", key=f"d_{b['id']}", help="Borrar reserva"):
                     delete_booking(b["id"])
                     st.session_state.refresh += 1
                     st.rerun()
